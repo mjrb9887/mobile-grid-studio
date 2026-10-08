@@ -1,0 +1,10 @@
+{
+  "name":"Grid Studio",
+  "short_name":"Grid Studio",
+  "description":"Mobile-first collage, reusable template, overlay and Instagram grid maker.",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#f7f1ee",
+  "theme_color":"#f7f1ee",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
