@@ -279,3 +279,99 @@ test('script fonts use their available weight in preview and export', async () =
   await a.run("drawOverlaysToCanvas(document.createElement('canvas').getContext('2d'),1080,1080)");
   assert.equal(font,'400 72px "Great Vibes"');
 });
+
+test('filters and adjustments affect only the selected photo and invalidate its saved export', async () => {
+  const a=app();a.ready();await a.run('prepareQuickSave(quickRevision)');
+  a.node('#photoFilter').onchange({target:{value:'warm'}});
+  a.node('#photoBrightness').oninput({target:{value:'125'}});
+  assert.equal(a.run('state.images[0].filter'),'warm');assert.equal(a.run('state.images[0].brightness'),125);
+  assert.equal(a.run('state.images[1].filter'),undefined);
+  assert.match(a.node('#grid').children[0].querySelector('img').style.filter,/sepia\(0.22\)/);
+  assert.equal(a.node('#photoBrightnessValue').textContent,'125%');assert.equal(a.node('#mobileExport').disabled,true);
+  a.run('handleCellTap(1)');assert.equal(a.node('#photoBrightness').value,100);assert.equal(a.node('#photoFilter').value,'original');
+});
+
+test('reset edits preserves crop and rotation while clearing filters, and moving a photo preserves its edits',()=>{
+  const a=app();a.ready();a.run("state.images[0].zoom=2;state.images[0].rotate=90;state.images[0].filter='vintage';state.images[0].saturation=40");
+  a.node('#resetPhotoEdits').onclick();assert.equal(a.run('state.images[0].zoom'),2);assert.equal(a.run('state.images[0].rotate'),90);
+  assert.equal(a.run('state.images[0].saturation'),100);assert.equal(a.run('photoFilterCSS(state.images[0])'),'none');
+  a.node('#photoFilter').onchange({target:{value:'vivid'}});a.node('#swapBtn').onclick();a.run('handleCellTap(0);handleCellTap(1)');
+  assert.equal(a.run('state.images[1].filter'),'vivid');assert.equal(a.run('state.images[1].src'),'first');
+});
+
+test('pixel fallback preserves alpha and supports neutral, black-and-white and brightness adjustments',()=>{
+  const a=app();a.context.pixels=new Uint8ClampedArray([200,100,50,80]);
+  a.run('applyPhotoEffects(pixels,photoEffects({}))');assert.deepEqual([...a.context.pixels],[200,100,50,80]);
+  a.run("applyPhotoEffects(pixels,photoEffects({filter:'mono'}))");
+  const [r,g,b,alpha]=a.context.pixels;assert.equal(r,g);assert.equal(g,b);assert.equal(alpha,80);
+  a.context.pixels=new Uint8ClampedArray([100,60,20,255]);a.run('applyPhotoEffects(pixels,photoEffects({brightness:150}))');
+  assert.deepEqual([...a.context.pixels],[150,90,30,255]);
+  assert.equal(a.run("photoFilterCSS({filter:'warm',filterStrength:0})"),'none');
+});
+
+test('export uses native canvas filters when available and restores them after drawing',()=>{
+  const a=app();let applied,restored;const ctx={filter:'none',save(){restored=this.filter},restore(){this.filter=restored},beginPath(){},rect(){},clip(){},translate(){},rotate(){},scale(){},drawImage(){applied=this.filter}};
+  a.context.effectContext=ctx;a.run("drawItem(effectContext,{naturalWidth:1000,naturalHeight:500},0,0,200,200,{filter:'warm'})");
+  assert.match(applied,/sepia\(0.22\)/);assert.equal(ctx.filter,'none');
+});
+
+test('export processes photo pixels when native canvas filters are unavailable',()=>{
+  const a=app();let processed,drawn;
+  a.context.document.createElement=()=>({width:0,height:0,getContext:()=>({drawImage(){},getImageData:()=>({data:new Uint8ClampedArray([100,60,20,255])}),putImageData(data){processed=[...data.data]}})});
+  a.context.effectContext={save(){},restore(){},beginPath(){},rect(){},clip(){},translate(){},rotate(){},scale(){},drawImage(source){drawn=source}};
+  a.run('drawItem(effectContext,{naturalWidth:1000,naturalHeight:500},0,0,200,200,{brightness:150})');
+  assert.deepEqual(processed,[150,90,30,255]);assert.equal(drawn.width,400);assert.equal(drawn.height,200);
+});
+
+test('advanced adjustments are independent per photo, refresh values on selection, and reset without changing crop',()=>{
+  const a=app();a.ready();a.run('state.images[0].zoom=2');
+  a.node('#photoExposure').oninput({target:{value:'1'}});a.node('#photoShadows').oninput({target:{value:'35'}});
+  assert.equal(a.run('state.images[0].exposure'),1);assert.equal(a.run('state.images[1].exposure'),undefined);
+  assert.equal(a.node('#photoExposureValue').textContent,'1 EV');
+  a.run('handleCellTap(1)');assert.equal(a.node('#photoExposure').value,0);
+  a.run('handleCellTap(0)');a.node('#resetPhotoEdits').onclick();assert.equal(a.run('state.images[0].exposure'),0);assert.equal(a.run('state.images[0].zoom'),2);
+});
+
+test('exposure uses linear-light EVs and tone controls target shadows and highlights',()=>{
+  const a=app();a.context.pixels=new Uint8ClampedArray([128,128,128,255]);
+  a.run('applyPhotoEffects(pixels,photoEffects({exposure:1}))');assert.equal(a.context.pixels[0],176);
+  a.context.pixels=new Uint8ClampedArray([20,20,20,255,220,220,220,255]);
+  a.run('applyPhotoEffects(pixels,photoEffects({shadows:60}))');
+  assert(a.context.pixels[0]-20>a.context.pixels[4]-220);assert.equal(a.context.pixels[3],255);
+  a.context.pixels=new Uint8ClampedArray([20,20,20,255,220,220,220,255]);
+  a.run('applyPhotoEffects(pixels,photoEffects({highlights:-60}))');assert(220-a.context.pixels[4]>20-a.context.pixels[0]);
+});
+
+test('warmth, sharpening and vignette process pixels while preserving alpha',()=>{
+  const a=app();a.context.pixels=new Uint8ClampedArray([100,100,100,80]);
+  a.run('applyPhotoEffects(pixels,photoEffects({temperature:50}))');assert(a.context.pixels[0]>a.context.pixels[2]);assert.equal(a.context.pixels[3],80);
+  const pixels=new Uint8ClampedArray(36);for(let i=0;i<36;i+=4){pixels.set([100,100,100,255],i)}pixels.set([150,150,150,255],16);
+  a.context.pixels=pixels;a.run('applyPhotoEffects(pixels,photoEffects({sharpness:50}),3,3)');assert(a.context.pixels[16]>150);
+  a.context.pixels=new Uint8ClampedArray(36);for(let i=0;i<36;i+=4)a.context.pixels.set([120,120,120,255],i);
+  a.run('applyPhotoEffects(pixels,photoEffects({vignette:100}),3,3)');assert(a.context.pixels[0]<a.context.pixels[16]);assert.equal(a.context.pixels[3],255);
+});
+
+test('advanced preset strength can be reduced to the unchanged original',()=>{
+  const a=app();assert.equal(a.run("needsPixelEffects({filter:'cinematic'})"),true);
+  assert.equal(a.run("needsPixelEffects({filter:'cinematic',filterStrength:0})"),false);
+  assert.equal(a.run("photoFilterCSS({filter:'cinematic',filterStrength:0})"),'none');
+});
+
+test('holding compare displays the original without changing edits or the prepared save',async()=>{
+  const a=app();a.ready();await a.run('prepareQuickSave(quickRevision)');a.run("state.images[0].filter='warm';paintPhoto(grid.children[0],state.images[0])");
+  const cell=a.node('#grid').children[0],file=a.run('quickFile');
+  a.node('#comparePhotoBtn').fire('pointerdown');assert.equal(cell.querySelector('img').style.filter,'none');
+  assert.equal(a.run('state.images[0].filter'),'warm');assert.equal(a.run('quickFile'),file);
+  a.node('#comparePhotoBtn').fire('pointercancel');assert.match(cell.querySelector('img').style.filter,/sepia/);
+});
+
+test('advanced preview and export use pixel processing even when native canvas filters are available',()=>{
+  const a=app();a.ready();let processedCount=0;
+  a.context.document.createElement=()=>({style:{},width:0,height:0,getContext:()=>({drawImage(){},getImageData:()=>({data:new Uint8ClampedArray([100,100,100,255])}),putImageData(){processedCount++}})});
+  a.run('state.images[0].temperature=40;paintPhoto(grid.children[0],state.images[0])');
+  const cell=a.node('#grid').children[0];a.timers.get(cell._previewTimer)();
+  assert.equal(processedCount,1);assert.equal(cell.querySelector('img').style.visibility,'hidden');assert(cell._photoPreview);
+  a.context.effectContext={filter:'none',save(){},restore(){},beginPath(){},rect(){},clip(){},translate(){},rotate(){},scale(){},drawImage(){}};
+  a.run('drawItem(effectContext,{naturalWidth:1000,naturalHeight:500},0,0,200,200,state.images[0])');
+  assert.equal(processedCount,2);
+});
