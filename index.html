@@ -59,6 +59,10 @@
     .btn:disabled{opacity:.6;cursor:wait}
     button,select,input:not([type=color]),summary{min-height:44px}input[type=range]{margin:0;display:block;touch-action:pan-y}
     input[type=number],input[type=text],textarea,select,.name-input{font-size:16px}
+    .menu-toggle{display:flex;align-items:center;justify-content:center;width:44px;padding:10px}
+    .app-menu{position:absolute;top:calc(100% + 8px);right:14px;z-index:45;width:min(290px,calc(100% - 28px));padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .menu-item{display:block;width:100%;padding:12px;text-align:left;border:0;border-radius:12px;background:transparent}.menu-item:hover,.menu-item:focus-visible{background:var(--accent-soft)}.menu-item span{display:block;font-weight:750;font-size:14px}.menu-item small{display:block;margin-top:4px;color:var(--muted);font-size:11px}
+    .about-version{display:inline-block;margin:8px 0 14px;padding:6px 10px;background:var(--accent-soft);border-radius:99px;font-size:12px;font-weight:750}.release-notes{padding-left:20px;font-size:13px;line-height:1.6}.about-sheet h4{font-size:14px;margin:16px 0 6px}.about-sheet .dedication{font-family:"Playfair Display",Georgia,serif;font-size:15px;line-height:1.6}
     .header-actions{display:flex;gap:8px;flex-shrink:0}.photo-editor,.overlay-editor{margin-top:10px}.photo-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.photo-actions .tool{flex:1 0 auto}
     .photo-editor strong{font-size:13px}.photo-editor summary{font-size:12px;color:var(--muted);padding:12px 0;cursor:pointer}.photo-editor details label{display:block;font-size:12px}
     #grid.photo-editing{touch-action:none}
@@ -73,7 +77,13 @@
 </head>
 <body>
 <div class="app">
-  <header><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn" id="settingsBtn" aria-label="Export settings">Settings</button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div></header>
+  <header><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn menu-toggle" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appMenu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div>
+  <nav id="appMenu" class="app-menu" aria-label="App navigation" hidden>
+    <button class="menu-item" id="settingsBtn"><span>Settings</span><small>Export sizes & Instagram tools</small></button>
+    <button class="menu-item" id="aboutBtn"><span>About & updates</span><small id="menuVersion"></small></button>
+  </nav>
+  </header>
+
   <main>
     <div class="tabs"><button class="tab active" data-tab="preset">Templates</button><button class="tab" data-tab="custom">Create</button><button class="tab" data-tab="saved">Saved</button></div>
 
@@ -158,7 +168,7 @@
 </div>
 
 <input id="fileInput" type="file" accept="image/*" multiple hidden /><input id="replaceInput" type="file" accept="image/*" hidden /><input id="overlayImageInput" type="file" accept="image/*" hidden />
-<div class="sheet-wrap" id="settingsSheet"><div class="sheet"><div class="grab"></div><h3>Export & Instagram tools</h3><p>Choose an exact output size. You can keep the canvas preview synced to the export ratio.</p>
+<div class="sheet-wrap" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="sheet"><div class="grab"></div><h3 id="settingsTitle">Export & Instagram tools</h3><p>Choose an exact output size. You can keep the canvas preview synced to the export ratio.</p>
   <select id="exportPreset" class="name-input"><option value="1080x1080">Instagram square · 1080×1080</option><option value="1080x1350">Instagram portrait · 1080×1350</option><option value="1080x566">Instagram landscape · 1080×566</option><option value="1080x1920">Story / Reel · 1080×1920</option><option value="1920x1080">HD landscape · 1920×1080</option><option value="1200x628">Facebook landscape · 1200×628</option><option value="custom">Custom dimensions</option></select>
   <div class="dim-row" style="margin-top:9px"><input type="number" id="exportWidth" min="64" max="6000" value="1080" aria-label="Export width"><span class="dim-x">×</span><input type="number" id="exportHeight" min="64" max="6000" value="1080" aria-label="Export height"></div>
   <div class="row2" style="margin-top:9px"><select id="exportType" class="name-input"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option></select><select id="exportQuality" class="name-input"><option value="0.94">High quality</option><option value="0.84">Balanced</option><option value="0.72">Smaller file</option></select></div>
@@ -169,6 +179,24 @@
   <div class="split-preview"><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i><i data-n="4"></i><i data-n="5"></i><i data-n="6"></i><i data-n="7"></i><i data-n="8"></i><i data-n="9"></i></div>
   <button class="btn" id="splitExportBtn">Export 9 IG tiles</button><p class="hint">Tiles are numbered 1–9 from top-left to bottom-right. Depending on your browser, you may be asked to allow multiple downloads.</p>
   <button class="btn ghost" id="closeSettings">Close</button>
+</div></div>
+<div class="sheet-wrap" id="aboutSheet" role="dialog" aria-modal="true" aria-labelledby="aboutTitle"><div class="sheet about-sheet">
+  <div class="grab"></div><h3 id="aboutTitle">About M&amp;M Mobile Grid</h3>
+  <span class="about-version" id="aboutVersion"></span>
+  <p class="dedication">Made with love, exclusively for my beloved <b>Marjorie B.</b></p>
+  <p>Create photo collages, add text and image overlays, edit each photo, and save or share your grid.</p>
+  <h4>What’s new</h4>
+  <ul class="release-notes">
+    <li>Hamburger menu with Settings and About & updates.</li>
+    <li>Per-photo filters, exposure, highlights, shadows, warmth, tint, vibrance, sharpening, and vignette.</li>
+    <li>Golden Hour, Light & Airy, Cinematic, Matte Film, and Dramatic Mono presets.</li>
+    <li>Drag to crop, pinch to zoom, reorder photos, and hold to compare edits with the original.</li>
+    <li>Aesthetic text fonts, opacity controls, and improved mobile color controls.</li>
+    <li>Save directly from the canvas with sharing and error notifications.</li>
+  </ul>
+  <h4>Saving on iPhone</h4><p>Tap Save image, then choose Save Image in the phone’s share sheet. The app confirms sharing completed; your phone handles saving to Photos.</p>
+  <p>Photos are edited on your device. Saved templates stay in this browser.</p>
+  <button class="btn ghost" id="closeAbout">Close</button>
 </div></div>
 <div class="sheet-wrap" id="saveSheet" role="dialog" aria-modal="true" aria-labelledby="saveTitle"><div class="sheet">
   <div class="grab"></div><h3 id="saveTitle">Save your image</h3>
@@ -183,6 +211,7 @@
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], grid=$('#grid');
+const APP_VERSION='1.1.0';$('#menuVersion').textContent='Version '+APP_VERSION;$('#aboutVersion').textContent='Version '+APP_VERSION;
 const fileInput=$('#fileInput'),replaceInput=$('#replaceInput'),overlayImageInput=$('#overlayImageInput'),overlayLayer=$('#overlayLayer');
 const toast=(msg,kind='info')=>{const t=$('#toast');t.dataset.kind=kind;t.setAttribute('aria-live',kind==='error'?'assertive':'polite');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),kind==='info'?2400:5000)};
 const overlayFontWeights={'DM Sans':700,'Playfair Display':600,'Cormorant Garamond':600,'EB Garamond':600,'Bodoni Moda':600,'Italiana':400,'Dancing Script':600,'Great Vibes':400,'Caveat':600,'Poppins':500,'Montserrat':600,'Raleway':500};
@@ -477,7 +506,14 @@ $('#saveTemplateBtn').onclick=()=>{const name=$('#templateName').value.trim()||`
 function renderSaved(){const s=loadSaved();$('#savedList').innerHTML=s.length?s.map((t,i)=>`<div class="saved-card" data-i="${i}">${miniStyle(t)}<b>${t.name}</b><span>${t.cells.length} slots · ${t.r}×${t.c}</span><div class="saved-actions"><button data-a="use">Use</button><button data-a="dup">Copy</button><button data-a="del" class="danger">Delete</button></div></div>`).join(''):`<p class="hint">Your custom templates will appear here.</p>`;$$('#savedList .saved-card').forEach(card=>card.addEventListener('click',e=>{const i=+card.dataset.i,a=e.target.dataset.a;if(!a)return;const list=loadSaved();if(a==='use'){applyTemplate(list[i]);switchTab('preset')}if(a==='dup'){const copy=structuredClone(list[i]);copy.id='custom-'+Date.now();copy.name=copy.name+' Copy';list.splice(i+1,0,copy);saveSaved(list);renderSaved();toast('Template duplicated')}if(a==='del'){list.splice(i,1);saveSaved(list);renderSaved();toast('Template deleted')}}))}
 function switchTab(name){$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));$('#presetPanel').classList.toggle('hidden',name!=='preset');$('#customPanel').classList.toggle('active',name==='custom');$('#savedPanel').classList.toggle('active',name==='saved');if(name==='saved')renderSaved()}$$('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
-function openSettings(){$('#settingsSheet').classList.add('open')}function closeSettings(){$('#settingsSheet').classList.remove('open')}$('#settingsBtn').onclick=openSettings;$('#closeSettings').onclick=closeSettings;$('#settingsSheet').onclick=e=>{if(e.target.id==='settingsSheet')closeSettings()};$('#mobileExport').onclick=$('#desktopSave').onclick=quickSave;
+function closeMenu(returnFocus=false){$('#appMenu').hidden=true;$('#menuBtn').setAttribute('aria-expanded','false');$('#menuBtn').setAttribute('aria-label','Open menu');if(returnFocus)$('#menuBtn').focus()}
+$('#menuBtn').onclick=()=>{const opening=$('#appMenu').hidden;$('#appMenu').hidden=!opening;$('#menuBtn').setAttribute('aria-expanded',String(opening));$('#menuBtn').setAttribute('aria-label',opening?'Close menu':'Open menu');if(opening)$('#settingsBtn').focus()};
+document.addEventListener('click',e=>{if(!$('#appMenu').contains(e.target)&&!$('#menuBtn').contains(e.target))closeMenu()});
+function openSettings(){closeMenu();$('#settingsSheet').classList.add('open');$('#exportPreset').focus()}
+function closeSettings(){const open=$('#settingsSheet').classList.contains('open');$('#settingsSheet').classList.remove('open');if(open)$('#menuBtn').focus()}
+function closeAbout(){const open=$('#aboutSheet').classList.contains('open');$('#aboutSheet').classList.remove('open');if(open)$('#menuBtn').focus()}
+$('#aboutBtn').onclick=()=>{closeMenu();$('#aboutSheet').classList.add('open');$('#closeAbout').focus()};$('#closeAbout').onclick=closeAbout;$('#aboutSheet').onclick=e=>{if(e.target.id==='aboutSheet')closeAbout()};
+$('#settingsBtn').onclick=openSettings;$('#closeSettings').onclick=closeSettings;$('#settingsSheet').onclick=e=>{if(e.target.id==='settingsSheet')closeSettings()};$('#mobileExport').onclick=$('#desktopSave').onclick=quickSave;
 function syncCanvasToExport(){if(!$('#syncExportRatio').checked)return;const w=Math.max(1,+$('#exportWidth').value||1),h=Math.max(1,+$('#exportHeight').value||1);const known={'1:1':[1,1],'4:5':[4,5],'16:9':[16,9],'9:16':[9,16],'3:2':[3,2]};let hit='';for(const [k,[a,b]] of Object.entries(known))if(Math.abs(w/h-a/b)<.002){hit=k;break}if(hit)setCanvasRatio(hit);else setCanvasRatio('custom',+(w/h).toFixed(3),1)}
 $('#exportPreset').onchange=e=>{if(e.target.value==='custom')return;const [w,h]=e.target.value.split('x').map(Number);$('#exportWidth').value=w;$('#exportHeight').value=h;syncCanvasToExport()};$('#exportWidth').oninput=()=>{$('#exportPreset').value='custom';syncCanvasToExport()};$('#exportHeight').oninput=()=>{$('#exportPreset').value='custom';syncCanvasToExport()};$('#syncExportRatio').onchange=()=>{if($('#syncExportRatio').checked)syncCanvasToExport()};$('#gapBg').onchange=scheduleQuickSave;$('#exportQuality').onchange=scheduleQuickSave;
 
@@ -560,7 +596,7 @@ $('#shareImageBtn').onclick=async()=>{
 $('#downloadImageBtn').onclick=()=>{if(!preparedExport)return;downloadExport(preparedExport.file);$('#saveStatus').textContent=$('#toast').textContent};
 $('#closeSave').onclick=closeSave;
 $('#saveSheet').onclick=e=>{if(e.target.id==='saveSheet')closeSave()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSave();closeSettings()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSave();closeSettings();closeAbout();if(!$('#appMenu').hidden)closeMenu(true)}});
 function roundedRect(ctx,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 async function exportSplit(){if((+$('#exportWidth').value)!=(+$('#exportHeight').value)&&!confirm('Instagram feed splitting works best with a square export. Export anyway?'))return;const full=await buildCanvas(),type=$('#exportType').value,ext=type==='image/png'?'png':'jpg',tw=Math.floor(full.width/3),th=Math.floor(full.height/3);for(let r=0;r<3;r++)for(let c=0;c<3;c++){const tile=document.createElement('canvas');tile.width=tw;tile.height=th;tile.getContext('2d').drawImage(full,c*tw,r*th,tw,th,0,0,tw,th);const n=r*3+c+1;setTimeout(()=>downloadCanvas(tile,`ig-tile-${n}.${ext}`,type),n*120)}toast('9 IG tiles exported')}
 $('#exportBtn').onclick=exportImage;$('#splitExportBtn').onclick=exportSplit;

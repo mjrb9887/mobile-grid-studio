@@ -375,3 +375,14 @@ test('advanced preview and export use pixel processing even when native canvas f
   a.run('drawItem(effectContext,{naturalWidth:1000,naturalHeight:500},0,0,200,200,state.images[0])');
   assert.equal(processedCount,2);
 });
+
+test('hamburger menu opens Settings and About with the app version and closes correctly',()=>{
+  const a=app();a.node('#appMenu').hidden=true;
+  a.node('#menuBtn').onclick();assert.equal(a.node('#appMenu').hidden,false);assert.equal(a.node('#menuBtn').attributes['aria-expanded'],'true');
+  a.node('#settingsBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);assert(a.node('#settingsSheet').classList.contains('open'));
+  a.node('#closeSettings').onclick();assert.equal(a.node('#settingsSheet').classList.contains('open'),false);
+  a.node('#menuBtn').onclick();a.node('#aboutBtn').onclick();assert(a.node('#aboutSheet').classList.contains('open'));
+  assert.equal(a.node('#aboutVersion').textContent,'Version 1.1.0');assert.equal(a.node('#menuVersion').textContent,'Version 1.1.0');
+  a.node('#closeAbout').onclick();assert.equal(a.node('#aboutSheet').classList.contains('open'),false);
+  a.node('#menuBtn').onclick();a.node('#menuBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);
+});
