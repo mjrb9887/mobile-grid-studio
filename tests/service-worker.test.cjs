@@ -7,13 +7,13 @@ function worker(){
   let fetched=0,skipped=false,claimed=false,mode='online';
   const cache={addAll:async()=>{},match:async key=>stored.get(key),put:async(key,response)=>stored.set(key,response)};
   const self={location:{origin:'https://example.com'},clients:{claim:async()=>{claimed=true}},skipWaiting:async()=>{skipped=true},addEventListener:(event,fn)=>handlers[event]=fn};
-  const context=vm.createContext({URL,self,caches:{open:async()=>cache,keys:async()=>['grid-studio-v11','grid-studio-v12','grid-studio-v13','other-app'],delete:async key=>deleted.push(key)},fetch:async()=>{fetched++;if(mode==='offline')throw new Error('offline');return {ok:mode==='online',version:'latest',clone(){return {version:'latest'}}}}});
+  const context=vm.createContext({URL,self,caches:{open:async()=>cache,keys:async()=>['grid-studio-v11','grid-studio-v12','grid-studio-v13','grid-studio-v14','other-app'],delete:async key=>deleted.push(key)},fetch:async()=>{fetched++;if(mode==='offline')throw new Error('offline');return {ok:mode==='online',version:'latest',clone(){return {version:'latest'}}}}});
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../sw.js'),'utf8'),context);
   return {handlers,stored,deleted,setMode:value=>mode=value,fetched:()=>fetched,skipped:()=>skipped,claimed:()=>claimed};
 }
 test('updated worker activates immediately, claims pages and deletes only its older caches',async()=>{
   const w=worker();let done;w.handlers.install({waitUntil:p=>done=p});await done;assert(w.skipped());
-  w.handlers.activate({waitUntil:p=>done=p});await done;assert(w.claimed());assert.deepEqual(w.deleted,['grid-studio-v11','grid-studio-v12']);
+  w.handlers.activate({waitUntil:p=>done=p});await done;assert(w.claimed());assert.deepEqual(w.deleted,['grid-studio-v11','grid-studio-v12','grid-studio-v13']);
 });
 test('navigation refreshes an old cached page and updates its offline copy',async()=>{
   const w=worker();let done;w.handlers.fetch({request:{method:'GET',mode:'navigate',url:'https://example.com/index.html'},respondWith:p=>done=p});
@@ -24,4 +24,17 @@ test('offline or unsuccessful navigation preserves the last successful page',asy
 });
 test('external requests and writes are not intercepted',()=>{
   const w=worker();for(const request of [{method:'POST',url:'https://example.com/'},{method:'GET',url:'https://other.example/'}]){w.handlers.fetch({request,respondWith(){assert.fail('Unexpected interception')}})}
+});
+
+
+test('install manifest uses scoped URLs and real phone-sized PNG icons cached for offline use',()=>{
+  const path=require('node:path'),root=path.join(__dirname,'..');
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
+  assert.equal(manifest.scope,'./');assert.equal(manifest.id,'./');assert.equal(manifest.display,'standalone');
+  const script=fs.readFileSync(path.join(root,'sw.js'),'utf8');
+  for(const size of [180,192,512]){
+    const name=`icon-${size}.png`,png=fs.readFileSync(path.join(root,name));
+    assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);assert(script.includes(name));
+  }
+  for(const size of [192,512])assert(manifest.icons.some(icon=>icon.sizes===`${size}x${size}`&&icon.type==='image/png'));
 });

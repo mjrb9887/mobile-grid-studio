@@ -7,6 +7,7 @@ const source = fs.readFileSync(require('node:path').join(__dirname, '../index.ht
 // A small DOM fixture exercises pointer handlers and save state without a browser.
 function app() {
   const nodes = new Map(), timers = new Map(), frames = [], draws = [], reads = [], canvases = [], textDraws = [];
+  const windowEvents={};
   let nextTimer = 0, shareCount = 0, downloadCount = 0, revoked = 0, hits = [];
   class Element {
     constructor(tag = 'div') {
@@ -44,7 +45,7 @@ function app() {
   const context = vm.createContext({
     console: { error() {} }, Blob, File, structuredClone,
     URL: { createObjectURL: () => 'blob:fixture', revokeObjectURL: () => revoked++ }, navigator,
-    window: { matchMedia: () => ({ matches: true }) },
+    window: { matchMedia: query => ({ matches: query !== '(display-mode: standalone)' }), addEventListener: (event,handler)=>windowEvents[event]=handler },
     document: {
       querySelector: node,
       querySelectorAll: selector => selector === '.cell' ? node('#grid').children : [],
@@ -59,7 +60,7 @@ function app() {
   vm.runInContext(source.slice(0, source.indexOf("if('serviceWorker'in navigator)")), context);
   const run = code => vm.runInContext(code, context);
   function ready() { run("state.images=[{src:'first',zoom:1,x:50,y:50,rotate:0,fit:'cover',flip:false},{src:'second',zoom:1,x:50,y:50},null];state.selected=0;renderGrid();updateControls()"); }
-  return { node, run, context, navigator, draws, textDraws, reads, canvases, timers, ready, hits: value => { hits = value; }, shares: () => shareCount, downloads: () => downloadCount, revoked: () => revoked };
+  return { windowEvents, node, run, context, navigator, draws, textDraws, reads, canvases, timers, ready, hits: value => { hits = value; }, shares: () => shareCount, downloads: () => downloadCount, revoked: () => revoked };
 }
 
 test('dragging the selected photo changes its crop without swapping or rebuilding the cell', () => {
@@ -382,7 +383,7 @@ test('hamburger menu opens Settings and About with the app version and closes co
   a.node('#settingsBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);assert(a.node('#settingsSheet').classList.contains('open'));
   a.node('#closeSettings').onclick();assert.equal(a.node('#settingsSheet').classList.contains('open'),false);
   a.node('#menuBtn').onclick();a.node('#aboutBtn').onclick();assert(a.node('#aboutSheet').classList.contains('open'));
-  assert.equal(a.node('#aboutVersion').textContent,'Version 1.2.0');assert.equal(a.node('#menuVersion').textContent,'Version 1.2.0');
+  assert.equal(a.node('#aboutVersion').textContent,'Version 1.3.0');assert.equal(a.node('#menuVersion').textContent,'Version 1.3.0');
   a.node('#closeAbout').onclick();assert.equal(a.node('#aboutSheet').classList.contains('open'),false);
   a.node('#menuBtn').onclick();a.node('#menuBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);
 });
@@ -417,4 +418,32 @@ test('mobile editor fits portrait and wide canvases between the header and botto
   assert.equal(a.node('#canvasStage').style.width,'217.125px');
   a.run("grid.style.aspectRatio='16/9';layoutMobilePhotoEditor()");
   assert.equal(a.node('#canvasStage').style.width,'354px');
+});
+
+
+test('install action invokes an available native prompt and offers instructions otherwise', async () => {
+  const a=app();let prevented=false,prompted=0;
+  a.windowEvents.beforeinstallprompt({preventDefault(){prevented=true},async prompt(){prompted++},userChoice:Promise.resolve({outcome:'accepted'})});
+  assert(prevented);assert.equal(a.node('#installHint').textContent,'Install on this device');
+  await a.node('#installBtn').onclick();assert.equal(prompted,1);
+  await a.node('#installBtn').onclick();assert(a.node('#aboutSheet').classList.contains('open'));
+});
+test('new creative presets produce distinct edits and support zero strength', () => {
+  const a=app();
+  for(const name of ['rose','peach','moody','coastal','porcelain','espresso','retro','noir','silver','sunset']){
+    const changed=a.run(`Array.from(applyPhotoEffects(new Uint8ClampedArray([80,130,180,128]),photoEffects({filter:'${name}'})))`);
+    assert.notDeepEqual(changed.slice(0,3),[80,130,180]);assert.equal(changed[3],128);
+    const neutral=a.run(`Array.from(applyPhotoEffects(new Uint8ClampedArray([80,130,180,128]),photoEffects({filter:'${name}',filterStrength:0})))`);
+    assert.deepEqual(Array.from(neutral),[80,130,180,128]);
+  }
+});
+test('whites and blacks target opposite tonal ranges, split tones affect color, grain is repeatable', () => {
+  const a=app();
+  const whites=a.run('Array.from(applyPhotoEffects(new Uint8ClampedArray([30,30,30,255,220,220,220,255]),photoEffects({whites:100})))');
+  assert(whites[4]-220>whites[0]-30);
+  const blacks=a.run('Array.from(applyPhotoEffects(new Uint8ClampedArray([30,30,30,255,220,220,220,255]),photoEffects({blacks:-100})))');
+  assert(30-blacks[0]>220-blacks[4]);
+  const warm=a.run('Array.from(applyPhotoEffects(new Uint8ClampedArray([50,50,50,100]),photoEffects({shadowTone:100})))');assert(warm[0]>warm[2]);assert.equal(warm[3],100);
+  const code='Array.from(applyPhotoEffects(new Uint8ClampedArray([80,130,180,128,80,130,180,64]),photoEffects({grain:100})))';
+  const grain=a.run(code);assert.deepEqual(grain,a.run(code));assert(grain[0]!==80||grain[4]!==80);assert.equal(grain[7],64);
 });

@@ -8,6 +8,7 @@
   <meta name="description" content="Made with love, exclusively for my beloved Marjorie B." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,7 +22,7 @@
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
     button,input,select,textarea{font:inherit}button{cursor:pointer;color:inherit}.app{max-width:760px;margin:0 auto;min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-    header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);padding:14px 16px 10px;border-bottom:1px solid rgba(231,221,215,.75)}
+    header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);padding:14px 16px 10px;border-bottom:1px solid rgba(231,221,215,.75)}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-family:"Playfair Display",Georgia,serif;font-weight:600;letter-spacing:-.02em;font-size:20px;line-height:1.2}.brand small{display:block;font-family:"DM Sans",sans-serif;font-weight:300;line-height:1.5;font-size:11px;color:var(--muted);letter-spacing:0;margin-top:2px}
     .iconbtn,.btn,.tool{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 13px}.btn.primary{background:var(--text);color:#fff;border-color:var(--text)}.btn.ghost{background:transparent}.danger{color:var(--danger)!important}
     main{padding:14px 14px 118px}.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;background:#eadfda;border-radius:16px;padding:5px;margin-bottom:14px}.tab{border:0;background:transparent;padding:9px 8px;border-radius:12px;color:var(--muted);font-weight:750;font-size:13px}.tab.active{background:#fff;color:var(--text);box-shadow:0 3px 10px rgba(80,55,48,.08)}
@@ -90,6 +91,7 @@
   <header id="appHeader"><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn menu-toggle" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appMenu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div><div class="mobile-top-actions"><button class="btn" id="mobileAdd">+ Photos</button><button class="btn primary" id="mobileExport" disabled>Preparing…</button></div>
   <nav id="appMenu" class="app-menu" aria-label="App navigation" hidden>
     <button class="menu-item" id="settingsBtn"><span>Settings</span><small>Export sizes & Instagram tools</small></button>
+    <button class="menu-item" id="installBtn"><span>Install app</span><small id="installHint">Add to your Home Screen</small></button>
     <button class="menu-item" id="aboutBtn"><span>About & updates</span><small id="menuVersion"></small></button>
   </nav>
   </header>
@@ -123,7 +125,7 @@
         <div class="editor-tabs" aria-label="Photo editing tools"><button class="tool" id="photoTabCrop" aria-pressed="false">Crop</button><button class="tool" id="photoTabFilters" aria-pressed="false">Filters</button><button class="tool" id="photoTabLight" aria-pressed="false">Light</button><button class="tool" id="photoTabColor" aria-pressed="false">Color</button><button class="tool" id="photoTabDetail" aria-pressed="false">Detail</button><button class="tool" id="photoTabPosition" aria-pressed="false">Position</button></div>
         <div id="photoPanelCrop" class="editor-panel"><div class="photo-actions"><button class="tool" id="fitBtn">Fill</button><button class="tool" id="rotateLeftBtn" aria-label="Rotate photo counterclockwise 90 degrees">↶ 90°</button><button class="tool" id="rotateBtn" aria-label="Rotate photo clockwise 90 degrees">↷ 90°</button><button class="tool" id="flipBtn" aria-pressed="false">Flip</button><button class="tool" id="resetPhotoBtn">Reset</button><button class="tool" id="replaceBtn">Replace</button><button class="tool danger" id="removeBtn">Remove</button></div><label for="zoomRange" style="display:block;margin-top:8px">Zoom <span class="value" id="zoomValue">1.00×</span></label><input type="range" min="100" max="400" value="100" id="zoomRange" />
         </div>
-        <div id="photoPanelFilters" class="editor-panel"><label for="photoFilter">Filter</label><select id="photoFilter" class="name-input"><option value="original">Original</option><option value="warm">Warm</option><option value="soft">Soft</option><option value="vivid">Vivid</option><option value="mono">Black & white</option><option value="vintage">Vintage</option><option value="golden">Golden hour</option><option value="airy">Light & airy</option><option value="cinematic">Cinematic</option><option value="matte">Matte film</option><option value="dramatic">Dramatic mono</option></select>
+        <div id="photoPanelFilters" class="editor-panel"><label for="photoFilter">Filter</label><select id="photoFilter" class="name-input"><option value="original">Original</option><option value="warm">Warm</option><option value="soft">Soft</option><option value="vivid">Vivid</option><option value="mono">Black & white</option><option value="vintage">Vintage</option><option value="golden">Golden hour</option><option value="airy">Light & airy</option><option value="cinematic">Cinematic</option><option value="matte">Matte film</option><option value="dramatic">Dramatic mono</option><option value="rose">Rosé</option><option value="peach">Peach glow</option><option value="moody">Moody</option><option value="coastal">Coastal</option><option value="porcelain">Porcelain</option><option value="espresso">Espresso</option><option value="retro">Retro film</option><option value="noir">Noir</option><option value="silver">Silver film</option><option value="sunset">Sunset split tone</option></select>
           <label for="photoFilterStrength">Filter strength <output class="value" id="photoFilterStrengthValue">100%</output></label><input id="photoFilterStrength" type="range" min="0" max="100" value="100" />
           </div>
         <div id="photoPanelAdjust" class="editor-panel"><label for="photoAdjustmentPicker">Adjustment</label><select id="photoAdjustmentPicker" class="name-input"></select><div id="fieldPhotoBrightness" class="adjustment-field"><label for="photoBrightness">Brightness <output class="value" id="photoBrightnessValue">100%</output></label><input id="photoBrightness" type="range" min="50" max="150" value="100" /></div><div id="fieldPhotoContrast" class="adjustment-field"><label for="photoContrast">Contrast <output class="value" id="photoContrastValue">100%</output></label><input id="photoContrast" type="range" min="50" max="150" value="100" /></div><div id="fieldPhotoSaturation" class="adjustment-field"><label for="photoSaturation">Saturation <output class="value" id="photoSaturationValue">100%</output></label><input id="photoSaturation" type="range" min="0" max="200" value="100" /></div><div id="advancedPhotoControls"></div></div>
@@ -190,15 +192,12 @@
   <span class="about-version" id="aboutVersion"></span>
   <p class="dedication">Made with love, exclusively for my beloved <b>Marjorie B.</b></p>
   <p>Create photo collages, add text and image overlays, edit each photo, and save or share your grid.</p>
-  <h4>What’s new</h4>
-  <ul class="release-notes"><li>Mobile bottom editor with grouped photo tools and a canvas that stays visible.</li><li>Photos and Save image are always available at the top on mobile.</li>
-    <li>Hamburger menu with Settings and About & updates.</li>
-    <li>Per-photo filters, exposure, highlights, shadows, warmth, tint, vibrance, sharpening, and vignette.</li>
-    <li>Golden Hour, Light & Airy, Cinematic, Matte Film, and Dramatic Mono presets.</li>
-    <li>Drag to crop, pinch to zoom, reorder photos, and hold to compare edits with the original.</li>
-    <li>Aesthetic text fonts, opacity controls, and improved mobile color controls.</li>
-    <li>Save directly from the canvas with sharing and error notifications.</li>
-  </ul>
+  <h4>Version history</h4>
+  <details open><summary>1.3.0 · Install & creative filters</summary><ul class="release-notes"><li>Installable app with Home Screen icons and offline editing after your first visit.</li><li>Fixed menu access during mobile editing.</li><li>Ten new filters, whites, blacks, fade, split toning, and film grain.</li></ul></details>
+  <details><summary>1.2.0 · Mobile editor</summary><ul class="release-notes"><li>Fixed bottom photo tools with Crop, Filters, Light, Color, Detail, and Position tabs.</li><li>Visible canvas with Photos and Save at the top.</li></ul></details>
+  <details><summary>1.1.0 · Settings & About</summary><ul class="release-notes"><li>Hamburger menu with Settings, app version, and updates.</li></ul></details>
+  <details><summary>Earlier updates</summary><ul class="release-notes"><li>Advanced per-photo filters, light, color, sharpening, and vignette.</li><li>Touch cropping, pinch zoom, photo reordering, and compare original.</li><li>Aesthetic text fonts, opacity, direct saving, and notifications.</li></ul></details>
+  <h4>Installing the app</h4><p>On iPhone, open the browser’s Share menu and choose Add to Home Screen. On supported Android and desktop browsers, choose Install app from the menu. Offline editing works after the first online visit; web fonts may need an internet connection.</p>
   <h4>Saving on iPhone</h4><p>Tap Save image, then choose Save Image in the phone’s share sheet. The app confirms sharing completed; your phone handles saving to Photos.</p>
   <p>Photos are edited on your device. Saved templates stay in this browser.</p>
   <button class="btn ghost" id="closeAbout">Close</button>
@@ -216,7 +215,7 @@
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], grid=$('#grid');
-const APP_VERSION='1.2.0';$('#menuVersion').textContent='Version '+APP_VERSION;$('#aboutVersion').textContent='Version '+APP_VERSION;
+const APP_VERSION='1.3.0';$('#menuVersion').textContent='Version '+APP_VERSION;$('#aboutVersion').textContent='Version '+APP_VERSION;
 const fileInput=$('#fileInput'),replaceInput=$('#replaceInput'),overlayImageInput=$('#overlayImageInput'),overlayLayer=$('#overlayLayer');
 const toast=(msg,kind='info')=>{const t=$('#toast');t.dataset.kind=kind;t.setAttribute('aria-live',kind==='error'?'assertive':'polite');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),kind==='info'?2400:5000)};
 const overlayFontWeights={'DM Sans':700,'Playfair Display':600,'Cormorant Garamond':600,'EB Garamond':600,'Bodoni Moda':600,'Italiana':400,'Dancing Script':600,'Great Vibes':400,'Caveat':600,'Poppins':500,'Montserrat':600,'Raleway':500};
@@ -270,9 +269,16 @@ const photoFilterPresets={
   original:{},warm:{sepia:.22,saturation:1.15,brightness:1.04},soft:{contrast:.9,brightness:1.06,saturation:.85},
   vivid:{contrast:1.15,saturation:1.35},mono:{grayscale:1,contrast:1.08},vintage:{sepia:.5,contrast:.92,saturation:.8},
   golden:{temperature:.35,highlights:-.12,brightness:1.04,saturation:1.1},airy:{shadows:.3,highlights:-.15,contrast:.9,vibrance:.2},
-  cinematic:{temperature:-.18,shadows:.12,contrast:1.12,saturation:.85,vignette:.2},matte:{shadows:.32,contrast:.82,saturation:.85,temperature:.1},dramatic:{grayscale:1,contrast:1.2,sharpness:.2,vignette:.3}
+  cinematic:{temperature:-.18,shadows:.12,contrast:1.12,saturation:.85,vignette:.2},matte:{shadows:.32,contrast:.82,saturation:.85,temperature:.1},dramatic:{grayscale:1,contrast:1.2,sharpness:.2,vignette:.3},
+  rose:{temperature:.12,tint:.25,contrast:.92,vibrance:.12},peach:{temperature:.3,tint:.08,shadows:.15,saturation:.9},
+  moody:{exposure:-.25,contrast:1.18,saturation:.75,shadowTone:-.3,vignette:.25},coastal:{temperature:-.2,vibrance:.3,highlights:-.15,shadowTone:-.18},
+  porcelain:{shadows:.18,brightness:1.05,saturation:.7,fade:.12},espresso:{temperature:.22,contrast:1.12,saturation:.75,shadowTone:.25},
+  retro:{fade:.25,temperature:.18,saturation:.85,grain:.18,highlightTone:.25},noir:{grayscale:1,contrast:1.3,blacks:-.22,vignette:.25},
+  silver:{grayscale:1,contrast:.95,fade:.15,grain:.12},sunset:{temperature:.2,tint:.15,highlightTone:.4,shadowTone:-.25,vibrance:.2}
 };
 const advancedPhotoSettings=[
+  {key:'whites',label:'Whites',min:-100,max:100},{key:'blacks',label:'Blacks',min:-100,max:100},
+  {key:'fade',label:'Fade',min:0,max:100},{key:'shadowTone',label:'Shadow tone · cool / warm',min:-100,max:100},{key:'highlightTone',label:'Highlight tone · cool / warm',min:-100,max:100},{key:'grain',label:'Film grain',min:0,max:100},
   {key:'exposure',label:'Exposure',min:-2,max:2,step:.1,unit:' EV'},
   {key:'highlights',label:'Highlights',min:-100,max:100},{key:'shadows',label:'Shadows',min:-100,max:100},
   {key:'temperature',label:'Warmth',min:-100,max:100},{key:'tint',label:'Tint',min:-100,max:100},
@@ -284,8 +290,8 @@ for(const setting of advancedPhotoSettings){
   $('#advancedPhotoControls').insertAdjacentHTML('beforeend',`<div id="fieldPhoto${setting.key[0].toUpperCase()+setting.key.slice(1)}" class="adjustment-field"><label for="${id}">${setting.label} <output class="value" id="${id}Value">0${setting.unit||''}</output></label><input type="range" id="${id}" min="${setting.min}" max="${setting.max}" step="${setting.step||1}" value="0" /></div>`);
 }
 
-const photoToolGroups={Light:['Exposure','Brightness','Contrast','Highlights','Shadows'],Color:['Saturation','Temperature','Tint','Vibrance'],Detail:['Sharpness','Vignette']};
-const photoToolNames={Temperature:'Warmth',Sharpness:'Sharpening'};
+const photoToolGroups={Light:['Exposure','Brightness','Contrast','Highlights','Shadows','Whites','Blacks'],Color:['Saturation','Temperature','Tint','Vibrance','ShadowTone','HighlightTone'],Detail:['Sharpness','Vignette','Fade','Grain']};
+const photoToolNames={Temperature:'Warmth',Sharpness:'Sharpening',ShadowTone:'Shadow tone · cool / warm',HighlightTone:'Highlight tone · cool / warm',Grain:'Film grain'};
 let currentPhotoTool='Crop',mobilePhotoPanelOpen=false;
 function showPhotoAdjustment(key){
   for(const name of Object.values(photoToolGroups).flat())$('#fieldPhoto'+name).style.display=name===key?'block':'none';
@@ -355,8 +361,12 @@ function applyPhotoEffects(pixels,e,width=0,height=0){
     if(advanced){
       if(exposureTable){r=exposureTable[Math.round(r)];g=exposureTable[Math.round(g)];b=exposureTable[Math.round(b)]}
       const lum=(.2126*r+.7152*g+.0722*b)/255;
-      const tone=clamp((e.shadows||0)*.6*(1-lum)**2+(e.highlights||0)*.6*lum**2,-.8,.8);
+      const tone=clamp((e.shadows||0)*.6*(1-lum)**2+(e.highlights||0)*.6*lum**2+(e.whites||0)*.5*lum**4+(e.blacks||0)*.5*(1-lum)**4,-.8,.8);
       if(tone>0){r+=(255-r)*tone;g+=(255-g)*tone;b+=(255-b)*tone}else{r*=1+tone;g*=1+tone;b*=1+tone}
+      const split=((e.shadowTone||0)*(1-lum)**2+(e.highlightTone||0)*lum**2)*32;
+      r=byte(r+split);b=byte(b-split);
+      const fade=clamp(e.fade||0,0,1)*.45;r=r*(1-fade)+255*fade;g=g*(1-fade)+255*fade;b=b*(1-fade)+255*fade;
+      if(e.grain){const pixel=i/4;let hash=Math.imul(pixel+1,374761393);hash=Math.imul(hash^(hash>>>13),1274126177);const noise=((hash>>>0)/4294967295-.5)*clamp(e.grain,0,1)*50;r+=noise;g+=noise;b+=noise}
       const warm=(e.temperature||0)*.2,tint=(e.tint||0)*.15;
       r=byte(r*(1+warm+tint/2));g=byte(g*(1-tint));b=byte(b*(1-warm+tint/2));
       const chroma=(Math.max(r,g,b)-Math.min(r,g,b))/Math.max(1,Math.max(r,g,b));
@@ -548,13 +558,22 @@ $('#saveTemplateBtn').onclick=()=>{const name=$('#templateName').value.trim()||`
 function renderSaved(){const s=loadSaved();$('#savedList').innerHTML=s.length?s.map((t,i)=>`<div class="saved-card" data-i="${i}">${miniStyle(t)}<b>${t.name}</b><span>${t.cells.length} slots · ${t.r}×${t.c}</span><div class="saved-actions"><button data-a="use">Use</button><button data-a="dup">Copy</button><button data-a="del" class="danger">Delete</button></div></div>`).join(''):`<p class="hint">Your custom templates will appear here.</p>`;$$('#savedList .saved-card').forEach(card=>card.addEventListener('click',e=>{const i=+card.dataset.i,a=e.target.dataset.a;if(!a)return;const list=loadSaved();if(a==='use'){applyTemplate(list[i]);switchTab('preset')}if(a==='dup'){const copy=structuredClone(list[i]);copy.id='custom-'+Date.now();copy.name=copy.name+' Copy';list.splice(i+1,0,copy);saveSaved(list);renderSaved();toast('Template duplicated')}if(a==='del'){list.splice(i,1);saveSaved(list);renderSaved();toast('Template deleted')}}))}
 function switchTab(name){$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));$('#presetPanel').classList.toggle('hidden',name!=='preset');$('#customPanel').classList.toggle('active',name==='custom');$('#savedPanel').classList.toggle('active',name==='saved');if(name==='saved')renderSaved()}$$('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
+
+let installPrompt=null;
+function syncInstallStatus(){const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;$('#installBtn').disabled=!!installed;$('#installHint').textContent=installed?'Already installed':installPrompt?'Install on this device':'Add to your Home Screen'}
+window.addEventListener?.('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;syncInstallStatus()});
+window.addEventListener?.('appinstalled',()=>{installPrompt=null;syncInstallStatus();toast('App installed')});
+$('#installBtn').onclick=async()=>{closeMenu();if(installPrompt){const prompt=installPrompt;installPrompt=null;try{await prompt.prompt();await prompt.userChoice}catch(error){toast('Could not open installation. Try your browser menu.')}syncInstallStatus()}else{openAbout();toast('Use your browser menu → Add to Home Screen or Install app.')}};
+syncInstallStatus();
+
 function closeMenu(returnFocus=false){$('#appMenu').hidden=true;$('#menuBtn').setAttribute('aria-expanded','false');$('#menuBtn').setAttribute('aria-label','Open menu');if(returnFocus)$('#menuBtn').focus()}
 $('#menuBtn').onclick=()=>{const opening=$('#appMenu').hidden;$('#appMenu').hidden=!opening;$('#menuBtn').setAttribute('aria-expanded',String(opening));$('#menuBtn').setAttribute('aria-label',opening?'Close menu':'Open menu');if(opening)$('#settingsBtn').focus()};
 document.addEventListener('click',e=>{if(!$('#appMenu').contains(e.target)&&!$('#menuBtn').contains(e.target))closeMenu()});
 function openSettings(){closeMenu();$('#settingsSheet').classList.add('open');$('#exportPreset').focus()}
 function closeSettings(){const open=$('#settingsSheet').classList.contains('open');$('#settingsSheet').classList.remove('open');if(open)$('#menuBtn').focus()}
 function closeAbout(){const open=$('#aboutSheet').classList.contains('open');$('#aboutSheet').classList.remove('open');if(open)$('#menuBtn').focus()}
-$('#aboutBtn').onclick=()=>{closeMenu();$('#aboutSheet').classList.add('open');$('#closeAbout').focus()};$('#closeAbout').onclick=closeAbout;$('#aboutSheet').onclick=e=>{if(e.target.id==='aboutSheet')closeAbout()};
+function openAbout(){closeMenu();$('#aboutSheet').classList.add('open');$('#closeAbout').focus()}
+$('#aboutBtn').onclick=openAbout;$('#closeAbout').onclick=closeAbout;$('#aboutSheet').onclick=e=>{if(e.target.id==='aboutSheet')closeAbout()};
 $('#settingsBtn').onclick=openSettings;$('#closeSettings').onclick=closeSettings;$('#settingsSheet').onclick=e=>{if(e.target.id==='settingsSheet')closeSettings()};$('#mobileExport').onclick=$('#desktopSave').onclick=quickSave;
 function syncCanvasToExport(){if(!$('#syncExportRatio').checked)return;const w=Math.max(1,+$('#exportWidth').value||1),h=Math.max(1,+$('#exportHeight').value||1);const known={'1:1':[1,1],'4:5':[4,5],'16:9':[16,9],'9:16':[9,16],'3:2':[3,2]};let hit='';for(const [k,[a,b]] of Object.entries(known))if(Math.abs(w/h-a/b)<.002){hit=k;break}if(hit)setCanvasRatio(hit);else setCanvasRatio('custom',+(w/h).toFixed(3),1)}
 $('#exportPreset').onchange=e=>{if(e.target.value==='custom')return;const [w,h]=e.target.value.split('x').map(Number);$('#exportWidth').value=w;$('#exportHeight').value=h;syncCanvasToExport()};$('#exportWidth').oninput=()=>{$('#exportPreset').value='custom';syncCanvasToExport()};$('#exportHeight').oninput=()=>{$('#exportPreset').value='custom';syncCanvasToExport()};$('#syncExportRatio').onchange=()=>{if($('#syncExportRatio').checked)syncCanvasToExport()};$('#gapBg').onchange=scheduleQuickSave;$('#exportQuality').onchange=scheduleQuickSave;

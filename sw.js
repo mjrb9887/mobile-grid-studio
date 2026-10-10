@@ -1,5 +1,5 @@
-const CACHE='grid-studio-v13';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg'];
+const CACHE='grid-studio-v14';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./icon-180.png','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())
 ));
