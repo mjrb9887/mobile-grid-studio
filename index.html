@@ -4,10 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f7f1ee" />
+  <meta name="apple-mobile-web-app-title" content="M&amp;M Mobile Grid" />
+  <meta name="description" content="Made with love, exclusively for my beloved Marjorie B." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>Grid Studio</title>
+  <title>M&amp;M Mobile Grid</title>
   <style>
     :root{
       --bg:#f7f1ee;--panel:#fffaf7;--text:#282321;--muted:#7e736d;--line:#e7ddd7;
@@ -46,6 +48,7 @@
     input[type=number],input[type=text],textarea,select,.name-input{font-size:16px}
     .header-actions{display:flex;gap:8px;flex-shrink:0}.photo-editor,.overlay-editor{margin-top:10px}.photo-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.photo-actions .tool{flex:1 0 auto}
     .photo-editor strong{font-size:13px}.photo-editor summary{font-size:12px;color:var(--muted);padding:12px 0;cursor:pointer}.photo-editor details label{display:block;font-size:12px}
+    #grid.photo-editing{touch-action:none}
     .cell.editing,.cell.reordering{touch-action:none;cursor:grab}.cell.editing:active,.cell.reordering:active{cursor:grabbing}
     .canvas-done{position:absolute;top:10px;right:10px;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .overlay-layer.reordering .overlay-item{pointer-events:none}
@@ -57,7 +60,7 @@
 </head>
 <body>
 <div class="app">
-  <header><div class="topbar"><div class="brand">Grid Studio <small>Collages made for your phone</small></div><div class="header-actions"><button class="iconbtn" id="settingsBtn" aria-label="Export settings">Settings</button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div></header>
+  <header><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn" id="settingsBtn" aria-label="Export settings">Settings</button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div></header>
   <main>
     <div class="tabs"><button class="tab active" data-tab="preset">Templates</button><button class="tab" data-tab="custom">Create</button><button class="tab" data-tab="saved">Saved</button></div>
 
@@ -114,7 +117,7 @@
         <div class="control"><div class="control-row"><label>Canvas colors</label><span class="value">Tap swatch to edit</span></div><div class="color-line"><label class="colorbox"><input type="color" id="canvasColor" value="#e7ddd7"><span>Gap / canvas</span></label><label class="colorbox"><input type="color" id="emptyColor" value="#f3ece8"><span>Empty cells</span></label></div></div>
 
       </div>
-      <p class="hint" style="margin-top:10px">Tap a photo to edit. Drag the selected photo to adjust its crop, or pinch to zoom. Use Reorder to move photos between slots.</p>
+      <p class="hint" style="margin-top:10px">Drag a photo to adjust its crop. Pinch to zoom. Use Reorder to move photos between slots, or Done to scroll the canvas.</p>
     </div>
   </main>
   <div class="bottom"><div class="bottom-inner"><button class="btn" id="mobileAdd">+ Photos</button><button class="btn primary" id="mobileExport" disabled>Preparing…</button></div></div>
@@ -170,8 +173,7 @@ const stylePresets=[
 {name:'Editorial',gap:2,radius:0,canvas:'#d9d5d2',empty:'#f7f6f5'},
 {name:'Dark',gap:5,radius:8,canvas:'#282321',empty:'#413a37'}
 ];
-let state={template:structuredClone(presets[3]),images:[],selected:-1,gap:6,radius:0,ratio:'1:1',customRatioW:4,customRatioH:3,swapMode:false,canvas:'#e7ddd7',empty:'#f3ece8',overlays:[],selectedOverlay:null,custom:{r:3,c:3,cells:[],selected:[]}};
-let dragMoved=false;
+let state={template:structuredClone(presets[3]),images:[],selected:-1,gap:6,radius:0,ratio:'1:1',customRatioW:4,customRatioH:3,photoEditing:true,swapMode:false,canvas:'#e7ddd7',empty:'#f3ece8',overlays:[],selectedOverlay:null,custom:{r:3,c:3,cells:[],selected:[]}};
 
 function ratioParts(){if(state.ratio==='custom')return [Math.max(1,+state.customRatioW||1),Math.max(1,+state.customRatioH||1)];const p=state.ratio.split(':').map(Number);return [p[0]||1,p[1]||1]}
 function ratioLabel(){const [w,h]=ratioParts();const f=n=>Number.isInteger(n)?n:+n.toFixed(3);return state.ratio==='custom'?`${f(w)}:${f(h)}`:state.ratio}
@@ -199,11 +201,12 @@ function paintPhoto(el,item){
   Object.assign(img.style,{inset:'auto',width:p.width+'px',height:p.height+'px',left:p.cx+'px',top:p.cy+'px',transform:`translate(-50%,-50%) rotate(${p.rotate}deg) scaleX(${item.flip?-1:1})`});
 }
 function syncPhotoMode(){
-  $('#canvasDone').hidden=!state.swapMode&&!(state.selected>=0&&state.images[state.selected])&&!state.selectedOverlay;
+  const editingPhotos=state.photoEditing&&state.images.some(Boolean)&&!state.selectedOverlay;grid.classList.toggle('photo-editing',editingPhotos||state.swapMode);
+  $('#canvasDone').hidden=!state.swapMode&&!editingPhotos&&!state.selectedOverlay;
   overlayLayer.classList.toggle('reordering',state.swapMode);$$('.overlay-item').forEach(el=>el.classList.toggle('selected',el.dataset.overlay===state.selectedOverlay));
-  $$('.cell').forEach(el=>{const i=+el.dataset.cell,editing=state.selected===i&&!!state.images[i]&&!state.swapMode;el.classList.toggle('selected',state.selected===i);el.classList.toggle('editing',editing);el.classList.toggle('reordering',state.swapMode&&!!state.images[i]);el.setAttribute('aria-pressed',String(state.selected===i))});
+  $$('.cell').forEach(el=>{const i=+el.dataset.cell,editing=state.photoEditing&&state.selected===i&&!!state.images[i]&&!state.swapMode;el.classList.toggle('selected',state.selected===i);el.classList.toggle('editing',editing);el.classList.toggle('reordering',state.swapMode&&!!state.images[i]);el.setAttribute('aria-pressed',String(state.selected===i))});
   $('#swapBtn').classList.toggle('active',state.swapMode);$('#swapBtn').setAttribute('aria-pressed',String(state.swapMode));$('#swapBtn').textContent=state.swapMode?'Finish reordering':'Reorder';
-  $('#canvasHint').textContent=state.swapMode?'Drag a photo into another slot, or tap two slots to swap. Tap Finish reordering when done.':state.selected>=0&&state.images[state.selected]?'Drag this photo to adjust the crop. Pinch to zoom. Scroll outside the photo to move the page.':'Tap a photo to adjust its crop. Use Reorder to move photos between slots.';
+  $('#canvasHint').textContent=state.swapMode?'Drag a photo into another slot, or tap two slots to swap. Tap Finish reordering when done.':state.selected>=0&&state.images[state.selected]?'Drag to adjust the crop. Pinch anywhere on the canvas to zoom this photo. Tap Done to scroll the canvas.':editingPhotos?'Drag any photo to adjust its crop. Pinch to zoom. Tap Done to scroll the canvas.':'Tap a photo to edit. You can scroll over the canvas.';
 }
 function renderGrid(){
   normalizeImages();const [rw,rh]=ratioParts();grid.style.gridTemplateRows=`repeat(${state.template.r},minmax(0,1fr))`;grid.style.gridTemplateColumns=`repeat(${state.template.c},minmax(0,1fr))`;grid.style.gap=state.gap+'px';grid.style.background=state.canvas;grid.style.aspectRatio=`${rw}/${rh}`;grid.innerHTML='';
@@ -222,45 +225,71 @@ function panPhoto(item,img,dw,dh,dx,dy){
   if(Math.abs(dh-p.boundsH)>1)item.y=clamp((item.y??50)+dy/(dh-p.boundsH)*100,0,100);
 }
 function cellAtPoint(x,y){return document.elementsFromPoint(x,y).find(el=>el.classList?.contains('cell')&&grid.contains(el))}
+let suppressPhotoClick=false;
 function attachCellGestures(el,i){
-  const pointers=new Map();let previous=null,pinch=null,moved=false,suppressClick=false;
-  el.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}handleCellTap(i)});
-  el.addEventListener('pointerdown',e=>{
+  el.addEventListener('click',()=>{if(suppressPhotoClick)return;handleCellTap(i)});
+}
+function installPhotoGestures(){
+  const pointers=new Map();let active=null,previous=null,pinch=null,moved=false,clickTimer=null;
+  function midpoint(){const [a,b]=[...pointers.values()];return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))}}
+  grid.addEventListener('pointerdown',e=>{
     if(e.pointerType==='mouse'&&e.button!==0)return;
-    if(!state.images[i]||(!state.swapMode&&state.selected!==i))return;
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});el.setPointerCapture?.(e.pointerId);
-    if(pointers.size===1){previous={x:e.clientX,y:e.clientY};moved=false;pinch=null}
-    else if(pointers.size===2&&!state.swapMode){const [a,b]=[...pointers.values()];pinch={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom:state.images[i].zoom||1};moved=true}
+    if(!active){
+      const el=e.target.closest?.('.cell');if(!el||!grid.contains(el))return;
+      const i=+el.dataset.cell;if(!state.images[i]||(!state.photoEditing&&!state.swapMode))return;
+      active={el,i,item:state.images[i],reorder:state.swapMode};previous={x:e.clientX,y:e.clientY};moved=false;pinch=null;
+      clearTimeout(clickTimer);suppressPhotoClick=false;
+      if(!active.reorder){state.selected=i;state.selectedOverlay=null;updateControls()}
+    }
+    if(pointers.size>=2)return;
+    e.preventDefault();pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{active.el.setPointerCapture?.(e.pointerId)}catch{}
+    if(pointers.size===2&&!active.reorder){const mid=midpoint();pinch={distance:mid.distance,zoom:active.item.zoom||1,mid};moved=true}
   });
-  el.addEventListener('pointermove',e=>{
-    if(!pointers.has(e.pointerId))return;e.preventDefault();pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const item=state.images[i];if(!item)return;
-    if(state.swapMode){
+  grid.addEventListener('pointermove',e=>{
+    if(!active||!pointers.has(e.pointerId))return;e.preventDefault();pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const {el,item}=active;
+    if(active.reorder){
       if(Math.hypot(e.clientX-previous.x,e.clientY-previous.y)<8&&!moved)return;
       moved=true;invalidateQuickSave();el.classList.add('drag-source');$$('.cell').forEach(c=>c.classList.remove('drag-target'));const target=cellAtPoint(e.clientX,e.clientY);if(target&&target!==el)target.classList.add('drag-target');return;
     }
-    if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()];item.zoom=clamp(pinch.zoom*Math.hypot(a.x-b.x,a.y-b.y)/pinch.distance,1,4);moved=true}
-    else if(pointers.size===1&&previous){const dx=e.clientX-previous.x,dy=e.clientY-previous.y;if(!moved&&Math.hypot(dx,dy)<3)return;const img=el.querySelector('img');if(img?.naturalWidth)panPhoto(item,img,el.clientWidth,el.clientHeight,dx,dy);previous={x:e.clientX,y:e.clientY};moved=true}
+    if(pointers.size===2&&pinch){
+      const mid=midpoint();item.zoom=clamp(pinch.zoom*mid.distance/pinch.distance,1,4);moved=true;
+    }else if(pointers.size===1&&previous){
+      const dx=e.clientX-previous.x,dy=e.clientY-previous.y;if(!moved&&Math.hypot(dx,dy)<3)return;
+      const img=el.querySelector('img');if(img?.naturalWidth)panPhoto(item,img,el.clientWidth,el.clientHeight,dx,dy);previous={x:e.clientX,y:e.clientY};moved=true;
+    }
     paintPhoto(el,item);updateControls();invalidateQuickSave();
   });
   function finish(e){
-    if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);
+    if(!active||!pointers.has(e.pointerId))return;
+    pointers.delete(e.pointerId);
+    if(e.type==='pointercancel')pointers.clear();
     if(pointers.size){previous=[...pointers.values()][0];pinch=null;return}
-    previous=null;pinch=null;suppressClick=moved;
-    if(state.swapMode){$$('.cell').forEach(c=>c.classList.remove('drag-source','drag-target'));if(moved&&e.type==='pointerup'){const target=cellAtPoint(e.clientX,e.clientY);if(target&&target!==el){const j=+target.dataset.cell;[state.images[i],state.images[j]]=[state.images[j],state.images[i]];state.selected=-1;renderGrid();updateControls();toast('Photos moved')}}}
+    const {el,i,reorder}=active;active=null;previous=null;pinch=null;
+    suppressPhotoClick=true;clickTimer=setTimeout(()=>suppressPhotoClick=false,400);
+    if(reorder){
+      if(!moved&&e.type==='pointerup')handleCellTap(i);
+      $$('.cell').forEach(c=>c.classList.remove('drag-source','drag-target'));
+      if(moved&&e.type==='pointerup'){const target=cellAtPoint(e.clientX,e.clientY);if(target&&target!==el){const j=+target.dataset.cell;[state.images[i],state.images[j]]=[state.images[j],state.images[i]];state.selected=-1;renderGrid();updateControls();toast('Photos moved')}}
+    }
     if(moved)scheduleQuickSave();moved=false;
-    setTimeout(()=>suppressClick=false,250);
   }
-  el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish);el.addEventListener('lostpointercapture',finish);
+  grid.addEventListener('pointerup',finish);grid.addEventListener('pointercancel',finish);grid.addEventListener('lostpointercapture',finish);
+  // Avoid native image dragging and the long-press menu interrupting a crop gesture.
+  grid.addEventListener('dragstart',e=>e.preventDefault());
+  grid.addEventListener('contextmenu',e=>{if(state.photoEditing||state.swapMode)e.preventDefault()});
 }
+installPhotoGestures();
 function handleCellTap(i){
   state.selectedOverlay=null;
   if(state.swapMode){
     if(state.selected<0){state.selected=i;toast('Choose the second slot')}
     else if(state.selected===i){state.selected=-1}
-    else{[state.images[state.selected],state.images[i]]=[state.images[i],state.images[state.selected]];state.selected=-1;toast('Photos swapped')}
-    renderGrid();updateControls();return;
+    else{[state.images[state.selected],state.images[i]]=[state.images[i],state.images[state.selected]];state.selected=-1;renderGrid();toast('Photos swapped')}
+    syncPhotoMode();updateControls();return;
   }
-  state.selected=i;syncPhotoMode();updateControls();
+  state.selected=i;state.photoEditing=true;syncPhotoMode();updateControls();
   if(!state.images[i]){fileInput.multiple=false;fileInput.click()}
 }
 function updateControls(){syncPhotoMode();const im=state.images[state.selected],panel=$('#imageControl'),op=overlayById(state.selectedOverlay),overlayPanel=$('#overlayControl');panel.style.display=state.selected>=0&&im&&!op&&!state.swapMode?'block':'none';overlayPanel.style.display=op?'block':'none';if(im&&!op){$('#selectedLabel').textContent=`Photo ${state.selected+1} · ${(im.rotate||0)}°`;$('#zoomRange').value=Math.round((im.zoom||1)*100);$('#zoomValue').textContent=(im.zoom||1).toFixed(2)+'×';$('#xRange').value=im.x??50;$('#yRange').value=im.y??50;$('#fitBtn').textContent=(im.fit||'cover')==='cover'?'Fill':'Fit';$('#flipBtn').classList.toggle('active',!!im.flip);$('#flipBtn').setAttribute('aria-pressed',String(!!im.flip))}if(op){$('#overlayLabel').textContent=op.type==='text'?'Text overlay':'Image overlay';$('#textOverlayFields').style.display=op.type==='text'?'block':'none';$('#overlayText').value=op.text||'';$('#overlayFont').value=op.font||'Arial';$('#overlayColor').value=op.color||'#ffffff';const sz=$('#overlaySize');if(op.type==='text'){sz.min=12;sz.max=220;sz.value=op.size||72;$('#overlaySizeValue').textContent=Math.round(op.size||72)+' px'}else{sz.min=5;sz.max=95;sz.value=op.size||30;$('#overlaySizeValue').textContent=Math.round(op.size||30)+'%'}$('#overlayOpacity').value=Math.round((op.opacity??1)*100);$('#overlayOpacityValue').textContent=Math.round((op.opacity??1)*100)+'%';$('#overlayRotate').value=op.rotate||0;$('#overlayRotateValue').textContent=(op.rotate||0)+'°'}}
@@ -273,18 +302,18 @@ function addFiles(files){
   if(arr.length>slots.length)toast(`Adding ${slots.length} photos. Choose a larger template to add more.`);
   arr.slice(0,slots.length).forEach((file,k)=>{
     const idx=slots[k],reader=new FileReader();reader.onerror=()=>toast('Could not open this photo. Please try another.');
-    reader.onload=e=>{if(state.template.id!==templateId)return;state.images[idx]={src:e.target.result,zoom:1,x:50,y:50,fit:'cover',rotate:0,flip:false};if(k===0)state.selected=idx;renderGrid();updateControls()};reader.readAsDataURL(file);
+    reader.onload=e=>{if(state.template.id!==templateId)return;state.photoEditing=true;state.images[idx]={src:e.target.result,zoom:1,x:50,y:50,fit:'cover',rotate:0,flip:false};if(k===0)state.selected=idx;renderGrid();updateControls()};reader.readAsDataURL(file);
   });fileInput.multiple=true;
 }
 fileInput.onchange=e=>{addFiles(e.target.files);e.target.value=''};
 replaceInput.onchange=e=>{
   const file=e.target.files[0],idx=state.selected,templateId=state.template.id;if(!file||idx<0)return;
-  const reader=new FileReader();reader.onerror=()=>toast('Could not open this photo. Please try another.');reader.onload=ev=>{if(state.template.id!==templateId)return;state.images[idx]={src:ev.target.result,zoom:1,x:50,y:50,fit:'cover',rotate:0,flip:false};renderGrid();updateControls()};reader.readAsDataURL(file);e.target.value='';
+  const reader=new FileReader();reader.onerror=()=>toast('Could not open this photo. Please try another.');reader.onload=ev=>{if(state.template.id!==templateId)return;state.photoEditing=true;state.images[idx]={src:ev.target.result,zoom:1,x:50,y:50,fit:'cover',rotate:0,flip:false};renderGrid();updateControls()};reader.readAsDataURL(file);e.target.value='';
 };
 $('#addPhotosBtn').onclick=$('#mobileAdd').onclick=()=>{state.selectedOverlay=null;state.selected=-1;state.swapMode=false;syncPhotoMode();updateControls();fileInput.multiple=true;fileInput.click()};$('#swapBtn').onclick=()=>{state.swapMode=!state.swapMode;state.selected=-1;state.selectedOverlay=null;renderGrid();updateControls()};$('#shuffleBtn').onclick=()=>{const filled=state.images.filter(Boolean);for(let i=filled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[filled[i],filled[j]]=[filled[j],filled[i]]}state.images=Array.from({length:state.template.cells.length},(_,i)=>filled[i]||null);state.selected=-1;renderGrid();updateControls();toast('Photos shuffled')};$('#clearBtn').onclick=()=>{state.images=state.images.map(()=>null);state.selected=-1;renderGrid();updateControls();toast('Photos cleared')};$('#ratioBtn').onclick=()=>{const order=['1:1','4:5','16:9','9:16','3:2'];const at=Math.max(0,order.indexOf(state.ratio));setCanvasRatio(order[(at+1)%order.length])};$$('#ratioPills .pill').forEach(b=>b.onclick=()=>setCanvasRatio(b.dataset.ratio));$('#ratioW').oninput=()=>{state.customRatioW=Math.max(1,+$('#ratioW').value||1);if(state.ratio==='custom')renderGrid();syncRatioUI()};$('#ratioH').oninput=()=>{state.customRatioH=Math.max(1,+$('#ratioH').value||1);if(state.ratio==='custom')renderGrid();syncRatioUI()};
 function syncStyleInputs(){$('#gapRange').value=state.gap;$('#gapValue').textContent=state.gap+' px';$('#radiusRange').value=state.radius;$('#radiusValue').textContent=state.radius+' px';$('#canvasColor').value=state.canvas;$('#emptyColor').value=state.empty}
 $('#gapRange').oninput=e=>{state.gap=+e.target.value;$('#gapValue').textContent=state.gap+' px';renderGrid()};$('#radiusRange').oninput=e=>{state.radius=+e.target.value;$('#radiusValue').textContent=state.radius+' px';renderGrid()};$('#canvasColor').oninput=e=>{state.canvas=e.target.value;renderGrid()};$('#emptyColor').oninput=e=>{state.empty=e.target.value;renderGrid()};
-$('#donePhotoBtn').onclick=$('#canvasDone').onclick=()=>{state.selected=-1;state.selectedOverlay=null;state.swapMode=false;syncPhotoMode();updateControls()};
+$('#donePhotoBtn').onclick=$('#canvasDone').onclick=()=>{state.selected=-1;state.selectedOverlay=null;state.swapMode=false;state.photoEditing=false;syncPhotoMode();updateControls()};
 function refreshSelectedPhoto(){const el=$$('.cell').find(el=>+el.dataset.cell===state.selected);if(el&&state.images[state.selected])paintPhoto(el,state.images[state.selected]);updateControls();scheduleQuickSave()}
 $('#rotateLeftBtn').onclick=()=>{const im=state.images[state.selected];if(!im)return;im.rotate=((im.rotate||0)+270)%360;im.x=im.y=50;refreshSelectedPhoto()};
 $('#resetPhotoBtn').onclick=()=>{const im=state.images[state.selected];if(!im)return;Object.assign(im,{zoom:1,x:50,y:50,rotate:0,flip:false,fit:'cover'});refreshSelectedPhoto()};
@@ -333,7 +362,7 @@ async function prepareQuickSave(revision){
     const [rw,rh]=ratioParts(),width=Math.round(2160*rw/Math.max(rw,rh)),height=Math.round(2160*rh/Math.max(rw,rh));
     const canvas=await buildCanvas({width,height});const blob=await canvasBlob(canvas,'image/jpeg');
     if(revision!==quickRevision)return;
-    quickFile=new File([blob],`grid-studio-${Date.now()}.jpg`,{type:blob.type});updateQuickSaveButtons();
+    quickFile=new File([blob],`mm-mobile-grid-${Date.now()}.jpg`,{type:blob.type});updateQuickSaveButtons();
   }catch(error){if(revision!==quickRevision)return;console.error('Save preparation failed',error);quickFailed=true;updateQuickSaveButtons()}
   finally{quickBuilding=false}
 }
@@ -363,7 +392,7 @@ async function exportImage(){
   button.disabled=true;button.textContent='Preparing image…';
   try{
     const type=$('#exportType').value,canvas=await buildCanvas(),blob=await canvasBlob(canvas,type);
-    const file=new File([blob],`grid-studio-${Date.now()}.${type==='image/png'?'png':'jpg'}`,{type:blob.type});
+    const file=new File([blob],`mm-mobile-grid-${Date.now()}.${type==='image/png'?'png':'jpg'}`,{type:blob.type});
     if(preparedExport)URL.revokeObjectURL(preparedExport.url);
     preparedExport={file,url:URL.createObjectURL(blob)};
     $('#exportPreview').src=preparedExport.url;$('#saveStatus').textContent='';

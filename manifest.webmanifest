@@ -1,10 +1,17 @@
 {
-  "name":"Grid Studio",
-  "short_name":"Grid Studio",
-  "description":"Mobile-first collage, reusable template, overlay and Instagram grid maker.",
-  "start_url":"./index.html",
-  "display":"standalone",
-  "background_color":"#f7f1ee",
-  "theme_color":"#f7f1ee",
-  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "name": "M&M Mobile Grid",
+  "short_name": "M&M Mobile Grid",
+  "description": "Made with love, exclusively for my beloved Marjorie B.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f1ee",
+  "theme_color": "#f7f1ee",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

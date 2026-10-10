@@ -18,7 +18,7 @@ function app() {
     }
     set className(value) { this.classList.add(...value.split(' ')); }
     set innerHTML(value) { this.children = []; }
-    appendChild(el) { this.children.push(el); }
+    appendChild(el) { this.children.push(el); el.parent = this; }
     setAttribute(k, v) { this.attributes[k] = v; }
     removeAttribute(k) { delete this.attributes[k]; }
     querySelector(sel) { return sel === 'img' ? this.children.find(el => el.tag === 'img') : null; }
@@ -29,7 +29,8 @@ function app() {
     click() { if (this.tag === 'a') downloadCount++; this.events.click?.({}); }
     setPointerCapture() {}
     contains(el) { return this.children.includes(el); }
-    fire(event, extra = {}) { this.events[event]?.({ type: event, pointerId: 1, pointerType: 'touch', button: 0, clientX: 100, clientY: 100, preventDefault() {}, ...extra }); }
+    closest(selector) { return selector === '.cell' && this.classList.contains('cell') ? this : this.parent?.closest(selector); }
+    fire(event, extra = {}) { const input = { type: event, target: this, pointerId: 1, pointerType: 'touch', button: 0, clientX: 100, clientY: 100, preventDefault() {}, ...extra }; this.events[event]?.(input); this.parent?.fire(event, input); }
     getContext() { return new Proxy({ drawImage: (...args) => draws.push(args), measureText: text => ({ width: text.length * 10 }) }, { get: (target, key) => target[key] || (() => {}) }); }
     toBlob(cb, type) { cb(new Blob(['pixels'], { type })); }
   }
@@ -70,12 +71,22 @@ test('dragging the selected photo changes its crop without swapping or rebuildin
   assert.equal(a.node('#mobileExport').disabled, true);
 });
 
-test('unselected photos permit page scrolling until tapped', () => {
+test('first touch selects and drags an unselected photo without a separate selection tap', () => {
   const a = app(); a.ready(); const cell = a.node('#grid').children[1];
+  cell.fire('pointerdown'); cell.fire('pointermove', { clientX: 120 }); cell.fire('pointerup');
+  assert.equal(a.run('state.images[1].x'), 40);
+  assert.equal(a.run('state.selected'), 1);
+  assert.equal(cell.classList.contains('editing'), true);
+});
+
+test('Done restores canvas scrolling and a tap re-enters editing', () => {
+  const a = app(); a.ready(); a.node('#canvasDone').onclick();
+  const cell = a.node('#grid').children[1];
+  assert.equal(a.node('#grid').classList.contains('photo-editing'), false);
   cell.fire('pointerdown'); cell.fire('pointermove', { clientX: 150 }); cell.fire('pointerup');
   assert.equal(a.run('state.images[1].x'), 50);
   cell.fire('click'); assert.equal(a.run('state.selected'), 1);
-  assert.equal(cell.classList.contains('editing'), true);
+  assert.equal(a.node('#grid').classList.contains('photo-editing'), true);
 });
 
 test('pinch zoom clamps at 4x, cleans up cancellation, and accepts a later drag', () => {
@@ -184,4 +195,20 @@ test('a small movement in Reorder leaves Save ready and on-canvas Done restores 
   a.node('#canvasDone').onclick(); assert.equal(a.run('state.swapMode'), false);
   assert.equal(cell.classList.contains('reordering'), false);
   assert.equal(cell.classList.contains('editing'), false);
+});
+
+test('a pinch spanning different slots zooms the first touched photo, leaving the second unchanged', () => {
+  const a = app(); a.ready(); const [first, second] = a.node('#grid').children;
+  first.fire('pointerdown', { clientX: 90 }); second.fire('pointerdown', { pointerId: 2, clientX: 110 });
+  second.fire('pointermove', { pointerId: 2, clientX: 150 });
+  assert.equal(a.run('state.images[0].zoom'), 3); assert.equal(a.run('state.images[1].zoom'), 1);
+  second.fire('pointerup', { pointerId: 2 }); first.fire('pointerup'); second.fire('click');
+  assert.equal(a.run('state.selected'), 0);
+});
+
+test('Reorder taps swap even if prevented pointer events produce no native click', () => {
+  const a = app(); a.ready(); a.node('#swapBtn').onclick();
+  let first = a.node('#grid').children[0]; first.fire('pointerdown'); first.fire('pointerup');
+  let second = a.node('#grid').children[1]; second.fire('pointerdown'); second.fire('pointerup');
+  assert.equal(a.run('state.images[0].src'), 'second'); assert.equal(a.run('state.images[1].src'), 'first');
 });
