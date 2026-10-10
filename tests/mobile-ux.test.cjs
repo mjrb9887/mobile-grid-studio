@@ -6,7 +6,7 @@ const source = fs.readFileSync(require('node:path').join(__dirname, '../index.ht
 
 // A small DOM fixture exercises pointer handlers and save state without a browser.
 function app() {
-  const nodes = new Map(), timers = new Map(), frames = [], draws = [], reads = [], canvases = [];
+  const nodes = new Map(), timers = new Map(), frames = [], draws = [], reads = [], canvases = [], textDraws = [];
   let nextTimer = 0, shareCount = 0, downloadCount = 0, revoked = 0, hits = [];
   class Element {
     constructor(tag = 'div') {
@@ -31,7 +31,7 @@ function app() {
     contains(el) { return this.children.includes(el); }
     closest(selector) { return selector === '.cell' && this.classList.contains('cell') ? this : this.parent?.closest(selector); }
     fire(event, extra = {}) { const input = { type: event, target: this, pointerId: 1, pointerType: 'touch', button: 0, clientX: 100, clientY: 100, preventDefault() {}, ...extra }; this.events[event]?.(input); this.parent?.fire(event, input); }
-    getContext() { return new Proxy({ drawImage: (...args) => draws.push(args), measureText: text => ({ width: text.length * 10 }) }, { get: (target, key) => target[key] || (() => {}) }); }
+    getContext() { return new Proxy({ drawImage: (...args) => draws.push(args), fillText: (...args) => textDraws.push(args), measureText: text => ({ width: text.length * 10 }) }, { get: (target, key) => target[key] || (() => {}) }); }
     toBlob(cb, type) { cb(new Blob(['pixels'], { type })); }
   }
   function node(selector) {
@@ -59,7 +59,7 @@ function app() {
   vm.runInContext(source.slice(0, source.indexOf("if('serviceWorker'in navigator)")), context);
   const run = code => vm.runInContext(code, context);
   function ready() { run("state.images=[{src:'first',zoom:1,x:50,y:50,rotate:0,fit:'cover',flip:false},{src:'second',zoom:1,x:50,y:50},null];state.selected=0;renderGrid();updateControls()"); }
-  return { node, run, context, navigator, draws, reads, canvases, timers, ready, hits: value => { hits = value; }, shares: () => shareCount, downloads: () => downloadCount, revoked: () => revoked };
+  return { node, run, context, navigator, draws, textDraws, reads, canvases, timers, ready, hits: value => { hits = value; }, shares: () => shareCount, downloads: () => downloadCount, revoked: () => revoked };
 }
 
 test('dragging the selected photo changes its crop without swapping or rebuilding the cell', () => {
@@ -211,4 +211,71 @@ test('Reorder taps swap even if prevented pointer events produce no native click
   let first = a.node('#grid').children[0]; first.fire('pointerdown'); first.fire('pointerup');
   let second = a.node('#grid').children[1]; second.fire('pointerdown'); second.fire('pointerup');
   assert.equal(a.run('state.images[0].src'), 'second'); assert.equal(a.run('state.images[1].src'), 'first');
+});
+
+test('success notification appears only after native sharing resolves', async () => {
+  const a = app(); a.ready(); await a.run('prepareQuickSave(quickRevision)');
+  let complete; a.navigator.share = () => new Promise(resolve => { complete = resolve; });
+  const saving = a.run('quickSave()'); assert.notEqual(a.node('#toast').dataset.kind, 'success');
+  complete(); await saving;
+  assert.equal(a.node('#toast').textContent, 'Image shared successfully.');
+  assert.equal(a.node('#toast').dataset.kind, 'success');
+  assert.equal(a.node('#toast').attributes['aria-live'], 'polite');
+});
+
+test('share errors show an error notification without opening another export screen', async () => {
+  const a = app(); a.ready(); await a.run('prepareQuickSave(quickRevision)');
+  a.navigator.share = async () => { throw Object.assign(new Error(), {name: 'DataError'}); };
+  await a.run('quickSave()');
+  assert.equal(a.node('#toast').dataset.kind, 'error');
+  assert.match(a.node('#toast').textContent, /Could not share/);
+  assert.equal(a.node('#toast').attributes['aria-live'], 'assertive');
+  assert.equal(a.node('#saveSheet').classList.contains('open'), false);
+  assert.equal(a.node('#mobileExport').disabled, false);
+  a.navigator.share = async () => { throw Object.assign(new Error(), {name: 'AbortError'}); };
+  await a.run('quickSave()');
+  assert.match(a.node('#toast').textContent, /cancelled/); assert.equal(a.node('#toast').dataset.kind, 'info');
+});
+
+test('desktop download failure shows an error instead of a success notification', async () => {
+  const a = app(); a.ready(); await a.run('prepareQuickSave(quickRevision)');
+  a.context.window.matchMedia = () => ({matches: false}); a.navigator.maxTouchPoints = 0;
+  a.context.document.createElement = () => { throw new Error('download unavailable'); };
+  await a.run('quickSave()');
+  assert.equal(a.node('#toast').dataset.kind, 'error'); assert.match(a.node('#toast').textContent, /Could not download/);
+});
+
+test('text export waits for the selected web font before drawing', async () => {
+  const a = app(); let complete; let requestedFont;
+  a.context.document.fonts = {load: font => { requestedFont = font; return new Promise(resolve => {complete = resolve;}); }};
+  const rendering = a.run("drawOverlaysToCanvas(document.createElement('canvas').getContext('2d'),1080,1080,[{type:'text',font:'Playfair Display',weight:600,size:72,text:'Love'}])");
+  assert.equal(requestedFont, '600 72px "Playfair Display"'); assert.equal(a.textDraws.length, 0);
+  complete(); await rendering; assert.equal(a.textDraws[0][0], 'Love');
+});
+
+test('overlay opacity controls preserve transparent, partial and solid opacity in preview and export', async () => {
+  const a = app();
+  a.run("state.overlays=[{id:'text',type:'text',text:'Love',font:'DM Sans',weight:700,color:'#a12345',size:72}];state.selectedOverlay='text'");
+  for (const [percent, alpha] of [[0,0],[45,.45],[100,1]]) {
+    a.node('#overlayOpacity').oninput({target:{value:String(percent)}});
+    assert.equal(a.node('#overlayLayer').children[0].style.opacity, alpha);
+    assert.equal(a.node('#overlayOpacityValue').textContent, percent+'%');
+    assert.equal(a.node('#overlayOpacity').attributes['aria-valuetext'], percent+'%');
+    let drawn;
+    const ctx = {save(){},restore(){},translate(){},rotate(){},measureText:()=>({width:20}),fillText(){drawn={alpha:this.globalAlpha,color:this.fillStyle};}};
+    a.context.exportContext=ctx;
+    await a.run('drawOverlaysToCanvas(exportContext,1080,1080)');
+    assert.equal(drawn.alpha, alpha); assert.equal(drawn.color, '#a12345');
+  }
+});
+
+test('script fonts use their available weight in preview and export', async () => {
+  const a = app();
+  a.run("state.overlays=[{id:'text',type:'text',text:'Love',font:'DM Sans',size:72,opacity:1}];state.selectedOverlay='text'");
+  a.node('#overlayFont').onchange({target:{value:'Great Vibes'}});
+  assert.equal(a.node('#overlayLayer').children[0].style.fontWeight, 400);
+  let font;
+  a.context.document.fonts={load:async value=>{font=value;}};
+  await a.run("drawOverlaysToCanvas(document.createElement('canvas').getContext('2d'),1080,1080)");
+  assert.equal(font,'400 72px "Great Vibes"');
 });
