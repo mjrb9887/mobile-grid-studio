@@ -73,11 +73,21 @@
     button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
     @media(max-width:639px){#desktopSave{display:none}.toolbar{flex-wrap:wrap;overflow:visible}.toolbar .tool{flex:1 0 auto}.brand small{font-size:10px}.sheet{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}}
     @media(min-width:640px){main{padding-left:22px;padding-right:22px}.workspace-card{padding:16px}.bottom{display:none}header{padding-left:22px;padding-right:22px}}
+
+    .mobile-top-actions{display:none}.editor-tabs{display:flex;gap:6px;overflow-x:auto;margin:8px 0;scrollbar-width:none}.editor-tabs .tool{flex-shrink:0}.editor-tabs .active{background:var(--accent);color:#fff}.editor-panel label{display:block;font-size:12px;margin-top:6px}.editor-footer{display:flex;gap:8px;margin-top:6px}.editor-footer .tool{flex:1}.photo-editor select{width:100%}.adjustment-field{margin-top:8px}
+    @media(max-width:639px){
+      main{padding-bottom:24px}.mobile-top-actions{display:flex;gap:8px;margin-top:10px}.mobile-top-actions .btn{flex:1}.toast{bottom:calc(20px + env(safe-area-inset-bottom))}
+      body.photo-panel-open{overflow:hidden}body.photo-panel-open main{visibility:hidden}
+      body.photo-panel-open #canvasShell{visibility:visible;position:fixed;top:var(--editor-canvas-top,120px);bottom:var(--editor-canvas-bottom,320px);left:10px;right:10px;z-index:31;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:8px}
+      body.photo-panel-open #imageControl{visibility:visible;position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;border-radius:20px 20px 0 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--panel);box-shadow:0 -6px 24px #0002;max-height:52dvh;overflow-y:auto;overscroll-behavior:contain}
+      #imageControl .photo-actions{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px}#imageControl .photo-actions .tool{flex-shrink:0}#imageControl .editor-tabs .tool{padding:8px 12px}body.photo-panel-open #canvasDone{display:none}
+      body.photo-panel-open .toast{bottom:calc(var(--editor-canvas-bottom,320px) + 8px)}
+    }
   </style>
 </head>
 <body>
 <div class="app">
-  <header><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn menu-toggle" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appMenu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div>
+  <header id="appHeader"><div class="topbar"><div class="brand">M&amp;M Mobile Grid <small>Made with love, exclusively for my beloved <b>Marjorie B.</b></small></div><div class="header-actions"><button class="iconbtn menu-toggle" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appMenu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button class="btn primary" id="desktopSave" disabled>Preparing…</button></div></div><div class="mobile-top-actions"><button class="btn" id="mobileAdd">+ Photos</button><button class="btn primary" id="mobileExport" disabled>Preparing…</button></div>
   <nav id="appMenu" class="app-menu" aria-label="App navigation" hidden>
     <button class="menu-item" id="settingsBtn"><span>Settings</span><small>Export sizes & Instagram tools</small></button>
     <button class="menu-item" id="aboutBtn"><span>About & updates</span><small id="menuVersion"></small></button>
@@ -107,23 +117,18 @@
 
     <div class="section-title"><h2>Your canvas</h2><span id="canvasMeta">3 slots · 1:1</span></div>
     <div class="workspace-card">
-      <div class="canvas-shell"><div class="canvas-stage" id="canvasStage"><div id="grid"></div><div class="overlay-layer" id="overlayLayer"></div><button class="tool canvas-done" id="canvasDone" hidden>Done</button></div></div>
+      <div class="canvas-shell" id="canvasShell"><div class="canvas-stage" id="canvasStage"><div id="grid"></div><div class="overlay-layer" id="overlayLayer"></div><button class="tool canvas-done" id="canvasDone" hidden>Done</button></div></div>
       <div class="control photo-editor" id="imageControl" style="display:none">
         <div class="control-row"><strong id="selectedLabel">Photo 1</strong><button class="tool" id="donePhotoBtn">Done</button></div>
-        <div class="photo-actions"><button class="tool" id="fitBtn">Fill</button><button class="tool" id="rotateLeftBtn" aria-label="Rotate photo counterclockwise 90 degrees">↶ 90°</button><button class="tool" id="rotateBtn" aria-label="Rotate photo clockwise 90 degrees">↷ 90°</button><button class="tool" id="flipBtn" aria-pressed="false">Flip</button><button class="tool" id="resetPhotoBtn">Reset</button><button class="tool" id="replaceBtn">Replace</button><button class="tool danger" id="removeBtn">Remove</button></div>
-        <label for="zoomRange" style="display:block;margin-top:8px">Zoom <span class="value" id="zoomValue">1.00×</span></label><input type="range" min="100" max="400" value="100" id="zoomRange" />
-        <details class="photo-adjustments" open><summary>Filters & adjustments</summary>
-          <label for="photoFilter">Filter</label><select id="photoFilter" class="name-input"><option value="original">Original</option><option value="warm">Warm</option><option value="soft">Soft</option><option value="vivid">Vivid</option><option value="mono">Black & white</option><option value="vintage">Vintage</option><option value="golden">Golden hour</option><option value="airy">Light & airy</option><option value="cinematic">Cinematic</option><option value="matte">Matte film</option><option value="dramatic">Dramatic mono</option></select>
+        <div class="editor-tabs" aria-label="Photo editing tools"><button class="tool" id="photoTabCrop" aria-pressed="false">Crop</button><button class="tool" id="photoTabFilters" aria-pressed="false">Filters</button><button class="tool" id="photoTabLight" aria-pressed="false">Light</button><button class="tool" id="photoTabColor" aria-pressed="false">Color</button><button class="tool" id="photoTabDetail" aria-pressed="false">Detail</button><button class="tool" id="photoTabPosition" aria-pressed="false">Position</button></div>
+        <div id="photoPanelCrop" class="editor-panel"><div class="photo-actions"><button class="tool" id="fitBtn">Fill</button><button class="tool" id="rotateLeftBtn" aria-label="Rotate photo counterclockwise 90 degrees">↶ 90°</button><button class="tool" id="rotateBtn" aria-label="Rotate photo clockwise 90 degrees">↷ 90°</button><button class="tool" id="flipBtn" aria-pressed="false">Flip</button><button class="tool" id="resetPhotoBtn">Reset</button><button class="tool" id="replaceBtn">Replace</button><button class="tool danger" id="removeBtn">Remove</button></div><label for="zoomRange" style="display:block;margin-top:8px">Zoom <span class="value" id="zoomValue">1.00×</span></label><input type="range" min="100" max="400" value="100" id="zoomRange" />
+        </div>
+        <div id="photoPanelFilters" class="editor-panel"><label for="photoFilter">Filter</label><select id="photoFilter" class="name-input"><option value="original">Original</option><option value="warm">Warm</option><option value="soft">Soft</option><option value="vivid">Vivid</option><option value="mono">Black & white</option><option value="vintage">Vintage</option><option value="golden">Golden hour</option><option value="airy">Light & airy</option><option value="cinematic">Cinematic</option><option value="matte">Matte film</option><option value="dramatic">Dramatic mono</option></select>
           <label for="photoFilterStrength">Filter strength <output class="value" id="photoFilterStrengthValue">100%</output></label><input id="photoFilterStrength" type="range" min="0" max="100" value="100" />
-          <label for="photoBrightness">Brightness <output class="value" id="photoBrightnessValue">100%</output></label><input id="photoBrightness" type="range" min="50" max="150" value="100" />
-          <label for="photoContrast">Contrast <output class="value" id="photoContrastValue">100%</output></label><input id="photoContrast" type="range" min="50" max="150" value="100" />
-          <label for="photoSaturation">Saturation <output class="value" id="photoSaturationValue">100%</output></label><input id="photoSaturation" type="range" min="0" max="200" value="100" />
-          <details class="advanced-photo-fields"><summary>Advanced light & color</summary><div id="advancedPhotoControls"></div></details>
-          <button class="tool" id="comparePhotoBtn" aria-pressed="false">Hold to compare original</button>
-          <button class="tool" id="resetPhotoEdits">Reset filters & adjustments</button>
-          <p class="micro">Applies to this photo only. Your original photo stays unchanged.</p>
-        </details>
-        <details><summary>Fine-tune position</summary><label for="xRange">Horizontal position</label><input type="range" min="0" max="100" value="50" id="xRange" /><label for="yRange">Vertical position</label><input type="range" min="0" max="100" value="50" id="yRange" /></details>
+          </div>
+        <div id="photoPanelAdjust" class="editor-panel"><label for="photoAdjustmentPicker">Adjustment</label><select id="photoAdjustmentPicker" class="name-input"></select><div id="fieldPhotoBrightness" class="adjustment-field"><label for="photoBrightness">Brightness <output class="value" id="photoBrightnessValue">100%</output></label><input id="photoBrightness" type="range" min="50" max="150" value="100" /></div><div id="fieldPhotoContrast" class="adjustment-field"><label for="photoContrast">Contrast <output class="value" id="photoContrastValue">100%</output></label><input id="photoContrast" type="range" min="50" max="150" value="100" /></div><div id="fieldPhotoSaturation" class="adjustment-field"><label for="photoSaturation">Saturation <output class="value" id="photoSaturationValue">100%</output></label><input id="photoSaturation" type="range" min="0" max="200" value="100" /></div><div id="advancedPhotoControls"></div></div>
+        <div id="photoPanelPosition" class="editor-panel"><label for="xRange">Horizontal position</label><input type="range" min="0" max="100" value="50" id="xRange" /><label for="yRange">Vertical position</label><input type="range" min="0" max="100" value="50" id="yRange" /></div>
+        <div class="editor-footer"><button class="tool" id="comparePhotoBtn" aria-pressed="false">Hold to compare</button><button class="tool" id="resetPhotoEdits">Reset edits</button></div>
       </div>
         <div class="control overlay-editor" id="overlayControl" style="display:none">
           <div class="control-row"><label>Selected overlay</label><span class="value" id="overlayLabel">Text</span></div>
@@ -164,7 +169,7 @@
       <p class="hint" style="margin-top:10px">Drag a photo to adjust its crop. Pinch to zoom. Use Reorder to move photos between slots, or Done to scroll the canvas.</p>
     </div>
   </main>
-  <div class="bottom"><div class="bottom-inner"><button class="btn" id="mobileAdd">+ Photos</button><button class="btn primary" id="mobileExport" disabled>Preparing…</button></div></div>
+
 </div>
 
 <input id="fileInput" type="file" accept="image/*" multiple hidden /><input id="replaceInput" type="file" accept="image/*" hidden /><input id="overlayImageInput" type="file" accept="image/*" hidden />
@@ -186,7 +191,7 @@
   <p class="dedication">Made with love, exclusively for my beloved <b>Marjorie B.</b></p>
   <p>Create photo collages, add text and image overlays, edit each photo, and save or share your grid.</p>
   <h4>What’s new</h4>
-  <ul class="release-notes">
+  <ul class="release-notes"><li>Mobile bottom editor with grouped photo tools and a canvas that stays visible.</li><li>Photos and Save image are always available at the top on mobile.</li>
     <li>Hamburger menu with Settings and About & updates.</li>
     <li>Per-photo filters, exposure, highlights, shadows, warmth, tint, vibrance, sharpening, and vignette.</li>
     <li>Golden Hour, Light & Airy, Cinematic, Matte Film, and Dramatic Mono presets.</li>
@@ -211,7 +216,7 @@
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], grid=$('#grid');
-const APP_VERSION='1.1.0';$('#menuVersion').textContent='Version '+APP_VERSION;$('#aboutVersion').textContent='Version '+APP_VERSION;
+const APP_VERSION='1.2.0';$('#menuVersion').textContent='Version '+APP_VERSION;$('#aboutVersion').textContent='Version '+APP_VERSION;
 const fileInput=$('#fileInput'),replaceInput=$('#replaceInput'),overlayImageInput=$('#overlayImageInput'),overlayLayer=$('#overlayLayer');
 const toast=(msg,kind='info')=>{const t=$('#toast');t.dataset.kind=kind;t.setAttribute('aria-live',kind==='error'?'assertive':'polite');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),kind==='info'?2400:5000)};
 const overlayFontWeights={'DM Sans':700,'Playfair Display':600,'Cormorant Garamond':600,'EB Garamond':600,'Bodoni Moda':600,'Italiana':400,'Dancing Script':600,'Great Vibes':400,'Caveat':600,'Poppins':500,'Montserrat':600,'Raleway':500};
@@ -276,8 +281,45 @@ const advancedPhotoSettings=[
 let comparingPhoto=null;
 for(const setting of advancedPhotoSettings){
   const id='photo'+setting.key[0].toUpperCase()+setting.key.slice(1);
-  $('#advancedPhotoControls').insertAdjacentHTML('beforeend',`<label for="${id}">${setting.label} <output class="value" id="${id}Value">0${setting.unit||''}</output></label><input type="range" id="${id}" min="${setting.min}" max="${setting.max}" step="${setting.step||1}" value="0" />`);
+  $('#advancedPhotoControls').insertAdjacentHTML('beforeend',`<div id="fieldPhoto${setting.key[0].toUpperCase()+setting.key.slice(1)}" class="adjustment-field"><label for="${id}">${setting.label} <output class="value" id="${id}Value">0${setting.unit||''}</output></label><input type="range" id="${id}" min="${setting.min}" max="${setting.max}" step="${setting.step||1}" value="0" /></div>`);
 }
+
+const photoToolGroups={Light:['Exposure','Brightness','Contrast','Highlights','Shadows'],Color:['Saturation','Temperature','Tint','Vibrance'],Detail:['Sharpness','Vignette']};
+const photoToolNames={Temperature:'Warmth',Sharpness:'Sharpening'};
+let currentPhotoTool='Crop',mobilePhotoPanelOpen=false;
+function showPhotoAdjustment(key){
+  for(const name of Object.values(photoToolGroups).flat())$('#fieldPhoto'+name).style.display=name===key?'block':'none';
+}
+function setPhotoTool(tab){
+  currentPhotoTool=tab;
+  for(const name of ['Crop','Filters','Light','Color','Detail','Position']){const btn=$('#photoTab'+name);btn.classList.toggle('active',name===tab);btn.setAttribute('aria-pressed',String(name===tab))}
+  for(const name of ['Crop','Filters','Position'])$('#photoPanel'+name).style.display=name===tab?'block':'none';
+  const fields=photoToolGroups[tab];$('#photoPanelAdjust').style.display=fields?'block':'none';
+  if(fields){const picker=$('#photoAdjustmentPicker');picker.innerHTML=fields.map(key=>`<option value="${key}">${photoToolNames[key]||key}</option>`).join('');picker.value=fields[0];showPhotoAdjustment(fields[0])}
+  $('#imageControl').scrollTop=0;requestAnimationFrame(layoutMobilePhotoEditor);
+}
+function layoutMobilePhotoEditor(){
+  if(!mobilePhotoPanelOpen||!window.innerWidth)return;
+  const header=$('#appHeader').getBoundingClientRect(),panel=$('#imageControl').getBoundingClientRect();
+  const height=window.visualViewport?.height||window.innerHeight;
+  const top=Math.max(0,header.bottom)+6,bottom=panel.height+6;
+  document.body.style.setProperty('--editor-canvas-top',top+'px');document.body.style.setProperty('--editor-canvas-bottom',bottom+'px');
+  const ratio=grid.style.aspectRatio.split('/').map(Number);const aspect=ratio.length===2?ratio[0]/ratio[1]:ratio[0];
+  const stage=$('#canvasStage'),width=Math.max(1,Math.min(window.innerWidth-36,(height-top-bottom-16)*(aspect||1)))+'px';
+  if(stage.style.width!==width){stage.style.width=width;scheduleQuickSave()}
+}
+function syncMobilePhotoEditor(open){
+  open=!!open&&window.matchMedia('(max-width:639px)').matches;
+  if(open===mobilePhotoPanelOpen)return;
+  mobilePhotoPanelOpen=open;document.body.classList.toggle('photo-panel-open',open);
+  if(!open){$('#canvasStage').style.width='';scheduleQuickSave()}
+  requestAnimationFrame(layoutMobilePhotoEditor);
+}
+for(const name of ['Crop','Filters','Light','Color','Detail','Position'])$('#photoTab'+name).onclick=()=>setPhotoTool(name);
+$('#photoAdjustmentPicker').onchange=e=>showPhotoAdjustment(e.target.value);
+setPhotoTool('Crop');
+window.addEventListener?.('resize',()=>{syncMobilePhotoEditor($('#imageControl').style.display!=='none');layoutMobilePhotoEditor()});
+window.visualViewport?.addEventListener('resize',layoutMobilePhotoEditor);
 function photoEffects(item){
   const preset=photoFilterPresets[item.filter]||photoFilterPresets.original,strength=clamp((item.filterStrength??100)/100,0,1);
   const advanced={};for(const setting of advancedPhotoSettings){const manual=clamp(item[setting.key]??0,setting.min,setting.max);advanced[setting.key]=(preset[setting.key]||0)*strength+(setting.key==='exposure'?manual:manual/100)}
@@ -455,7 +497,7 @@ function handleCellTap(i){
   state.selected=i;state.photoEditing=true;syncPhotoMode();updateControls();
   if(!state.images[i]){fileInput.multiple=false;fileInput.click()}
 }
-function updateControls(){syncPhotoMode();const im=state.images[state.selected],panel=$('#imageControl'),op=overlayById(state.selectedOverlay),overlayPanel=$('#overlayControl');panel.style.display=state.selected>=0&&im&&!op&&!state.swapMode?'block':'none';overlayPanel.style.display=op?'block':'none';if(im&&!op){syncPhotoEdits(im);$('#selectedLabel').textContent=`Photo ${state.selected+1} · ${(im.rotate||0)}°`;$('#zoomRange').value=Math.round((im.zoom||1)*100);$('#zoomValue').textContent=(im.zoom||1).toFixed(2)+'×';$('#xRange').value=im.x??50;$('#yRange').value=im.y??50;$('#fitBtn').textContent=(im.fit||'cover')==='cover'?'Fill':'Fit';$('#flipBtn').classList.toggle('active',!!im.flip);$('#flipBtn').setAttribute('aria-pressed',String(!!im.flip))}if(op){$('#overlayLabel').textContent=op.type==='text'?'Text overlay':'Image overlay';$('#textOverlayFields').style.display=op.type==='text'?'block':'none';$('#overlayText').value=op.text||'';$('#overlayFont').value=op.font||'Arial';$('#overlayColor').value=op.color||'#ffffff';const sz=$('#overlaySize');if(op.type==='text'){sz.min=12;sz.max=220;sz.value=op.size||72;$('#overlaySizeValue').textContent=Math.round(op.size||72)+' px'}else{sz.min=5;sz.max=95;sz.value=op.size||30;$('#overlaySizeValue').textContent=Math.round(op.size||30)+'%'}$('#overlayOpacity').value=Math.round((op.opacity??1)*100);$('#overlayOpacityValue').textContent=Math.round((op.opacity??1)*100)+'%';$('#overlayOpacity').setAttribute('aria-valuetext',Math.round((op.opacity??1)*100)+'%');$('#overlayRotate').value=op.rotate||0;$('#overlayRotateValue').textContent=(op.rotate||0)+'°'}}
+function updateControls(){syncPhotoMode();const im=state.images[state.selected],panel=$('#imageControl'),op=overlayById(state.selectedOverlay),overlayPanel=$('#overlayControl');panel.style.display=state.selected>=0&&im&&!op&&!state.swapMode?'block':'none';overlayPanel.style.display=op?'block':'none';syncMobilePhotoEditor(panel.style.display!=='none');if(im&&!op){syncPhotoEdits(im);$('#selectedLabel').textContent=`Photo ${state.selected+1} · ${(im.rotate||0)}°`;$('#zoomRange').value=Math.round((im.zoom||1)*100);$('#zoomValue').textContent=(im.zoom||1).toFixed(2)+'×';$('#xRange').value=im.x??50;$('#yRange').value=im.y??50;$('#fitBtn').textContent=(im.fit||'cover')==='cover'?'Fill':'Fit';$('#flipBtn').classList.toggle('active',!!im.flip);$('#flipBtn').setAttribute('aria-pressed',String(!!im.flip))}if(op){$('#overlayLabel').textContent=op.type==='text'?'Text overlay':'Image overlay';$('#textOverlayFields').style.display=op.type==='text'?'block':'none';$('#overlayText').value=op.text||'';$('#overlayFont').value=op.font||'Arial';$('#overlayColor').value=op.color||'#ffffff';const sz=$('#overlaySize');if(op.type==='text'){sz.min=12;sz.max=220;sz.value=op.size||72;$('#overlaySizeValue').textContent=Math.round(op.size||72)+' px'}else{sz.min=5;sz.max=95;sz.value=op.size||30;$('#overlaySizeValue').textContent=Math.round(op.size||30)+'%'}$('#overlayOpacity').value=Math.round((op.opacity??1)*100);$('#overlayOpacityValue').textContent=Math.round((op.opacity??1)*100)+'%';$('#overlayOpacity').setAttribute('aria-valuetext',Math.round((op.opacity??1)*100)+'%');$('#overlayRotate').value=op.rotate||0;$('#overlayRotateValue').textContent=(op.rotate||0)+'°'}}
 function addFiles(files){
   const arr=[...files];if(!arr.length)return;
   const slots=state.images.map((im,i)=>im?-1:i).filter(i=>i>=0);

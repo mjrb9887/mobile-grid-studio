@@ -382,7 +382,39 @@ test('hamburger menu opens Settings and About with the app version and closes co
   a.node('#settingsBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);assert(a.node('#settingsSheet').classList.contains('open'));
   a.node('#closeSettings').onclick();assert.equal(a.node('#settingsSheet').classList.contains('open'),false);
   a.node('#menuBtn').onclick();a.node('#aboutBtn').onclick();assert(a.node('#aboutSheet').classList.contains('open'));
-  assert.equal(a.node('#aboutVersion').textContent,'Version 1.1.0');assert.equal(a.node('#menuVersion').textContent,'Version 1.1.0');
+  assert.equal(a.node('#aboutVersion').textContent,'Version 1.2.0');assert.equal(a.node('#menuVersion').textContent,'Version 1.2.0');
   a.node('#closeAbout').onclick();assert.equal(a.node('#aboutSheet').classList.contains('open'),false);
   a.node('#menuBtn').onclick();a.node('#menuBtn').onclick();assert.equal(a.node('#appMenu').hidden,true);
+});
+
+
+test('mobile photo selection opens the contextual editor and Done restores the page', () => {
+  const a=app();a.ready();
+  assert(a.run("document.body.classList.contains('photo-panel-open')"));
+  a.node('#donePhotoBtn').onclick();
+  assert.equal(a.run("document.body.classList.contains('photo-panel-open')"),false);
+  assert.equal(a.node('#canvasStage').style.width,'');
+  a.run('handleCellTap(1)');
+  assert(a.run("document.body.classList.contains('photo-panel-open')"));
+});
+test('grouped photo tools show one adjustment while preserving edits across tabs', () => {
+  const a=app();a.ready();a.node('#photoTabColor').onclick();
+  assert.equal(a.node('#photoPanelAdjust').style.display,'block');
+  assert.equal(a.node('#photoPanelCrop').style.display,'none');
+  a.node('#photoAdjustmentPicker').onchange({target:{value:'Temperature'}});
+  assert.equal(a.node('#fieldPhotoTemperature').style.display,'block');
+  assert.equal(a.node('#fieldPhotoSaturation').style.display,'none');
+  a.node('#photoTemperature').oninput({target:{value:'35'}});
+  a.node('#photoTabFilters').onclick();a.node('#photoTabColor').onclick();
+  assert.equal(a.run('state.images[0].temperature'),35);
+});
+test('mobile editor fits portrait and wide canvases between the header and bottom panel', () => {
+  const a=app();a.ready();
+  a.context.window.innerWidth=390;a.context.window.innerHeight=844;
+  a.node('#appHeader').getBoundingClientRect=()=>({bottom:130});
+  a.node('#imageControl').getBoundingClientRect=()=>({height:300});
+  a.run("document.body.style.setProperty=function(key,value){this[key]=value};grid.style.aspectRatio='9/16';layoutMobilePhotoEditor()");
+  assert.equal(a.node('#canvasStage').style.width,'217.125px');
+  a.run("grid.style.aspectRatio='16/9';layoutMobilePhotoEditor()");
+  assert.equal(a.node('#canvasStage').style.width,'354px');
 });
